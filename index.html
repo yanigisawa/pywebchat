@@ -1,0 +1,53 @@
+<html>
+<head><title>PyWebChat</title></head>
+<body>
+<style>
+	ul { list-style-type: none; }
+	body { margin-left: 5px }
+	.loading { display: none; }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+
+<label>Name:</label>
+<input type="text" name="userName" />
+<label>Message:</label>
+<input type="text" name="message" />
+<input type="button" id="refresh" value="Post"/>
+
+<img src="285.gif" class="loading" id="loading" />
+<div id="videos"></div>
+
+<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#refresh").click(function () {
+			if(!$.trim($("#searchTerms").val()).length) {
+				var errorMessage = "Enter search terms, one per line. E.g.:\n";
+				errorMessage += "waltz\n";
+				errorMessage += "foxtrot\n";
+				errorMessage += "cha cha";
+				alert(errorMessage);
+				return;
+			}
+			$(".loading").fadeToggle();
+			$("#videos").toggle('slow', function () {
+				$.ajax({
+					type: "POST",
+					url: "bulkSearch.py",
+					data: { searchTerms: $("#searchTerms").val() },
+					success: function(data) {
+						$("#videos").html(data);
+						$("#videos").toggle('slow');
+						$("#loading").fadeToggle();
+					},
+					error: function() { 
+						$("#loading").fadeToggle();
+						alert("failed ajax call."); 
+					}
+				})
+			});
+		});
+	});
+</script>
+</body>
+</html>
