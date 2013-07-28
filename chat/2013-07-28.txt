@@ -1,0 +1,10 @@
+{"date": "2013-07-28T15:34:08.297206", "message": "someMessage", "user": "someUser"}
+{"date": "2013-07-28T15:38:14.877532", "message": "someMessage", "user": "someUser"}
+{"date": "2013-07-28T15:38:19.496373", "message": "someMessage", "user": "someUser"}
+{"date": "2013-07-28T15:38:42.604179", "message": "someMessage", "user": "someUser"}
+{"date": "2013-07-28T16:22:20.796184", "message": "someMessage", "user": "someUser"}
+{"date": "2013-07-28T16:23:30.670443", "message": "a new time zoned message", "user": "someUser"}
+{"date": "2013-07-28T16:23:40.416262", "message": "will it always take so long?", "user": "someUser"}
+{"date": "2013-07-28T16:23:44.690246", "message": "i guess not", "user": "someUser"}
+{"date": "2013-07-28T16:23:51.731594", "message": "the serve has to warm up?", "user": "someUser"}
+{"date": "2013-07-28T16:24:27.105557", "message": "what \"happens\" if I put \"quotes\" in the message?", "user": "someUser"}

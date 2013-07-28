@@ -2,52 +2,102 @@
 <head><title>PyWebChat</title></head>
 <body>
 <style>
-	ul { list-style-type: none; }
-	body { margin-left: 5px }
-	.loading { display: none; }
+    ul { list-style-type: none; }
+    body { margin-left: 5px }
+    .loading { display: none; }
+    .metaData {
+        font: 0.7em;
+        font-weight: bold;
+    }
+    .message {
+    }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
 <label>Name:</label>
-<input type="text" name="userName" />
+<input type="text" id="userName" value="someUser" />
 <label>Message:</label>
-<input type="text" name="message" />
-<input type="button" id="refresh" value="Post"/>
+<input type="text" id="message" value="someMessage" />
+<input type="button" id="newMessage" name="newMessage" value="Post"/>
 
 <img src="285.gif" class="loading" id="loading" />
-<div id="videos"></div>
+<div id="messageLog"></div>
 
 <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 <script type="text/javascript">
-	$(document).ready(function() {
-		$("#refresh").click(function () {
-			if(!$.trim($("#searchTerms").val()).length) {
-				var errorMessage = "Enter search terms, one per line. E.g.:\n";
-				errorMessage += "waltz\n";
-				errorMessage += "foxtrot\n";
-				errorMessage += "cha cha";
-				alert(errorMessage);
-				return;
-			}
-			$(".loading").fadeToggle();
-			$("#videos").toggle('slow', function () {
-				$.ajax({
-					type: "POST",
-					url: "bulkSearch.py",
-					data: { searchTerms: $("#searchTerms").val() },
-					success: function(data) {
-						$("#videos").html(data);
-						$("#videos").toggle('slow');
-						$("#loading").fadeToggle();
-					},
-					error: function() { 
-						$("#loading").fadeToggle();
-						alert("failed ajax call."); 
-					}
-				})
-			});
-		});
-	});
+
+function formatTime(d) {
+    var a_p = "AM";
+    d = new Date(new Date(d).toGMTString());
+    var curr_hour = d.getHours();
+    if (curr_hour >= 12) {
+        a_p = "PM";
+        curr_hour = curr_hour - 12;
+    }
+
+    if (curr_hour == 0) {
+        curr_hour = 12;
+    }
+
+    var curr_min = d.getMinutes() + "";
+    curr_hour = curr_hour + "";
+
+    if (curr_min.length == 1) {
+        curr_min = "0" + curr_min;
+    }
+
+    if (curr_hour.legth == 1) {
+        curr_hour = "0" + curr_hour;
+    }
+
+    return curr_hour + ":" + curr_min + " " + a_p;
+}
+
+function postMessage() {
+    $.ajax({
+        type: "POST",
+        url: "chat.py",
+        dataType: "json",
+        data: { 
+            name: $("#userName").val(), 
+            message: $("#message").val(),
+        },
+        success: function(result) {
+            messages = "";
+            if (result.success) {
+                var messageCount = result.data.length;
+                for(var i = 0; i < messageCount; i++) {
+                    messages += "<span class='metaData'>";
+                    messages += result.data[i].user + " - " ;
+                    messages += formatTime(result.data[i].date);
+                    messages += "</span><span class='message'>";
+                    messages += ": " + result.data[i].message + "</span><br/>";
+                }
+                $("#messageLog").html(messages);
+            }
+            //$("#messageLog").html(data);
+            $("#loading").fadeToggle();
+        },
+        error: function() { 
+            $("#loading").fadeToggle();
+            alert("failed ajax call."); 
+        }
+    });
+}
+
+$(document).ready(function() {
+    $("#newMessage").click(function () {
+        if(!$.trim($("#userName").val()).length) {
+            alert("Please enter a user name to post as.");
+            return;
+        }
+
+        if($.trim($("#message").val()).length) {
+            postMessage();
+            $(".loading").fadeToggle();
+        }
+    });
+});
 </script>
 </body>
 </html>
