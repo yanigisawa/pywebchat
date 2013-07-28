@@ -11,6 +11,10 @@ import cgitb; cgitb.enable();
 import time
 from datetime import datetime
 import os
+
+from watchdog.observers import Observer
+from watchdog.events import LoggingEventHandler
+
 from threading import Event
 
 import json
@@ -18,6 +22,28 @@ from collections import namedtuple
 
 today = datetime.utcnow()
 fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
+
+_newMsg = Event()
+class FileChangeHandler(LoggingEventHandler):
+    def on_created(self, event):
+        pass
+    def on_deleted(self,event):
+        pass
+
+    def on_any_event(self, event):
+        f = os.getcwd()
+        f = os.path.join(f, fileName)
+        if os.path.realpath(event.src_path) != f:
+            return
+
+        log("any event fired: {0}".format(event.src_path))
+
+        _newMsg.set()
+
+    def on_modified(self, event):
+        pass
+        #log("File Modified: {0} - {1}".format(event.src_path), fileName)
+        # Skip doing anything except with modifications to the data file
 
 def log(msg):
     with open("chat/log.txt", 'a') as f:
@@ -80,13 +106,16 @@ def printMessages():
     print(json.dumps(result, cls=MessageEncoder))
             
 def waitForNewMessages():
-    localTime = time.time()
-    modifiedTime = os.path.getmtime(fileName)
-    totalRequestTime = 0
-    while modifiedTime < localTime and totalRequestTime < 25:
-        time.sleep(1)
-        totalRequestTime += 1
-        modifiedTime = os.path.getmtime(fileName)
+    #log("{0} - New Wait for".format(today))
+    observer = Observer()
+    event_handler = FileChangeHandler()
+    path = os.getcwd()
+    path = os.path.join(path, "chat")
+    log("observe: {0}".format(path))
+    observer.schedule(event_handler, path, recursive=False)
+    observer.start()
+    _newMsg.wait(25)
+    log("is set: {0}".format(_newMsg.is_set()))
 
 def main():
     form = cgi.FieldStorage()
@@ -103,14 +132,13 @@ def main():
     if poll:
         waitForNewMessages()
 
+    #log("{0} - Printing Messages".format(today))
     printMessages()
 
 
 if __name__ == "__main__":
     main()
     
-
-
 
 #def newMessage():
 #    with open(fileName, 'r') as f:
