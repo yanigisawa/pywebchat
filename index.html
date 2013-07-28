@@ -53,6 +53,19 @@ function formatTime(d) {
     return curr_hour + ":" + curr_min + " " + a_p;
 }
 
+function printMessages(messageArr) {
+    var messageCount = messageArr.length;
+    var messages = "";
+    for(var i = 0; i < messageCount; i++) {
+        messages += "<span class='metaData'>";
+        messages += messageArr[i].user + " - " ;
+        messages += formatTime(messageArr[i].date);
+        messages += "</span><span class='message'>";
+        messages += ": " + messageArr[i].message + "</span><br/>";
+    }
+    $("#messageLog").html(messages);
+}
+
 function postMessage() {
     $.ajax({
         type: "POST",
@@ -63,19 +76,27 @@ function postMessage() {
             message: $("#message").val(),
         },
         success: function(result) {
-            messages = "";
             if (result.success) {
-                var messageCount = result.data.length;
-                for(var i = 0; i < messageCount; i++) {
-                    messages += "<span class='metaData'>";
-                    messages += result.data[i].user + " - " ;
-                    messages += formatTime(result.data[i].date);
-                    messages += "</span><span class='message'>";
-                    messages += ": " + result.data[i].message + "</span><br/>";
-                }
-                $("#messageLog").html(messages);
+                printMessages(result.data);
             }
-            //$("#messageLog").html(data);
+            $("#loading").fadeToggle();
+        },
+        error: function() { 
+            $("#loading").fadeToggle();
+            alert("failed ajax call."); 
+        }
+    });
+}
+
+function readMessages() {
+    $.ajax({
+        type: "GET",
+        url: "chat.py",
+        dataType: "json",
+        success: function(result) {
+            if (result.success) {
+                printMessages(result.data);
+            }
             $("#loading").fadeToggle();
         },
         error: function() { 
@@ -97,7 +118,27 @@ $(document).ready(function() {
             $(".loading").fadeToggle();
         }
     });
+
+    $("#loading").fadeToggle();
+    readMessages();
 });
+
+(function poll(){
+    $.ajax({ 
+        url: "chat.py", 
+        type: "POST",
+        data: {
+            poll: true
+        },
+        success: function(result){
+            if (result.success) { printMessages(result.data); }
+        }, 
+        dataType: "json", 
+        complete: poll, 
+        timeout: 30000 
+    });
+})();
+
 </script>
 </body>
 </html>

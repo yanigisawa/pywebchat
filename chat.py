@@ -8,7 +8,7 @@
 import cgi;
 import cgitb; cgitb.enable();
 
-from time import sleep
+import time
 from datetime import datetime
 import os
 from threading import Event
@@ -19,7 +19,9 @@ from collections import namedtuple
 today = datetime.utcnow()
 fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
 
-newMsg = Event()
+def log(msg):
+    with open("chat/log.txt", 'a') as f:
+        f.write(msg + "\n")
 
 class Message(object):
     user = None
@@ -55,22 +57,18 @@ def storeMessage(msg):
         f.write("{0}\n".format(json.dumps(msg, cls=MessageEncoder)))
 
 def printMessages():
-    print("Content-type: application/json" + os.linesep)
+    print("Content-type: application/json")
     print(os.linesep)
 
     messages = []
     
     if not os.path.isfile(fileName): return
 
-    from dateutil import zoneinfo
-
     with open(fileName, 'r') as f:
         for line in f:
             m = json2obj(line.strip())
             msg = Message()
             msg.user = m.user
-            utc_zone = zoneinfo.gettz('UTC')
-            est_zone = zoneinfo.gettz('US/Eastern')
             msg.date = m.date
             msg.message = m.message
             messages.append(msg)
@@ -78,11 +76,22 @@ def printMessages():
     result = ApiResult()
     result.success = True
     result.data = messages
+
     print(json.dumps(result, cls=MessageEncoder))
             
+def waitForNewMessages():
+    localTime = time.time()
+    modifiedTime = os.path.getmtime(fileName)
+    totalRequestTime = 0
+    while modifiedTime < localTime and totalRequestTime < 25:
+        time.sleep(1)
+        totalRequestTime += 1
+        modifiedTime = os.path.getmtime(fileName)
+
 def main():
     form = cgi.FieldStorage()
     messageSubmitted = form.getvalue("message", "")
+    poll = form.getvalue("poll", "")
 
     if messageSubmitted:
         msg = Message()
@@ -90,9 +99,12 @@ def main():
         msg.message = form.getvalue("message", "")
         msg.date = today
         storeMessage(msg)
-    # else poll
+
+    if poll:
+        waitForNewMessages()
 
     printMessages()
+
 
 if __name__ == "__main__":
     main()
