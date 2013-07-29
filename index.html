@@ -3,28 +3,22 @@
 <body>
 <style>
     ul { list-style-type: none; }
-    body { margin-left: 5px; position: relative; }
+    body { margin-left: 5px; }
     .metaData {
         font-weight: bold;
 		font-size: 90%;
     }
 	.messageLog {
 		overflow: auto;
-		position: absolute;
-		bottom: 135;
-		left: 0;
 	}
 	.input {
-		position: absolute;
-		bottom: 100;
-		left: 0;
 	}
 	#message { width: 500px; }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
 <div class="messageLog">
-	<div id="div1" style="height: 500px;">
+	<div id="div1" style="height: 300px; display: block;">
 		<div id="div2" style="height: inherit; overflow: auto; ">
 	        <div id="messageLog"></div>
 		</div>
@@ -33,14 +27,14 @@
 
 <div class="input"> 
 	<label>Name:</label>
-	<input type="text" id="userName" value="someUser" />
+	<input type="text" id="userName" value="" />
 	<label>Message:</label>
-	<input type="text" id="message" value="someMessage" />
+	<input type="text" id="message" value="" />
 	<input type="button" id="newMessage" name="newMessage" value="Post"/>
 
 </div>
 
-<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="jquery.hotkeys.js"></script>
 <script type="text/javascript">
 
@@ -49,7 +43,7 @@ var titleToggleInterval;
 
 function formatTime(d) {
     var a_p = "AM";
-    d = new Date(new Date(d).toGMTString());
+    d = new Date(d + "Z");
     var curr_hour = d.getHours();
     if (curr_hour >= 12) {
         a_p = "PM";
@@ -88,6 +82,17 @@ function scrollToBottom() {
 }
 
 function postMessage() {
+
+    if(!$.trim($("#userName").val()).length) {
+        alert("Please enter a user name to post as.");
+        return;
+    }
+
+    if(!$.trim($("#message").val()).length) {
+        return;
+    }
+
+
     $.ajax({
         type: "POST",
         url: "chat.py",
@@ -100,6 +105,7 @@ function postMessage() {
             if (result.success) {
                 printMessages(result.data);
             }
+            $("#message").val("");
         },
         error: function() { 
             alert("failed ajax call."); 
@@ -130,17 +136,17 @@ function readMessages() {
 
 $(document).ready(function() {
     $("#newMessage").click(function () {
-        if(!$.trim($("#userName").val()).length) {
-            alert("Please enter a user name to post as.");
-            return;
-        }
 
         if($.trim($("#message").val()).length) {
             postMessage();
         }
     });
 
-	$("#message").bind("keydown", "ctrl+return", postMessage());
+	$("#message").keypress(function (e) {
+        if (e.keyCode == 13) {
+            postMessage();
+        }
+    });
 
 	$("#message").focus(function() { 
 		clearInterval(titleToggleInterval); 
@@ -168,8 +174,10 @@ function toggleTitle() {
         },
         success: function(result){
             if (result.success) { 
-				if (result.data.length > totalMessageCount) {
+                var shouldToggleTitleBar = result.data[result.data.length - 1].user != $("#userName").val();
+				if (result.data.length > totalMessageCount && shouldToggleTitleBar) {
 					totalMessageCount = result.data.length;
+                    clearInterval(titleToggleInterval);
 					titleToggleInterval = setInterval(toggleTitle, 1000);
 				}
 				printMessages(result.data); 
