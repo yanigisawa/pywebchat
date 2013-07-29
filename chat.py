@@ -36,14 +36,10 @@ class FileChangeHandler(LoggingEventHandler):
         if os.path.realpath(event.src_path) != f:
             return
 
-        log("any event fired: {0}".format(event.src_path))
-
         _newMsg.set()
 
     def on_modified(self, event):
         pass
-        #log("File Modified: {0} - {1}".format(event.src_path), fileName)
-        # Skip doing anything except with modifications to the data file
 
 def log(msg):
     with open("chat/log.txt", 'a') as f:
@@ -88,34 +84,31 @@ def printMessages():
 
     messages = []
     
-    if not os.path.isfile(fileName): return
-
-    with open(fileName, 'r') as f:
-        for line in f:
-            m = json2obj(line.strip())
-            msg = Message()
-            msg.user = m.user
-            msg.date = m.date
-            msg.message = m.message
-            messages.append(msg)
-
     result = ApiResult()
     result.success = True
-    result.data = messages
+
+    if os.path.isfile(fileName): 
+        with open(fileName, 'r') as f:
+            for line in f:
+                m = json2obj(line.strip())
+                msg = Message()
+                msg.user = m.user
+                msg.date = m.date
+                msg.message = m.message
+                messages.append(msg)
+
+        result.data = messages
 
     print(json.dumps(result, cls=MessageEncoder))
             
 def waitForNewMessages():
-    #log("{0} - New Wait for".format(today))
     observer = Observer()
     event_handler = FileChangeHandler()
     path = os.getcwd()
     path = os.path.join(path, "chat")
-    log("observe: {0}".format(path))
     observer.schedule(event_handler, path, recursive=False)
     observer.start()
     _newMsg.wait(25)
-    log("is set: {0}".format(_newMsg.is_set()))
 
 def main():
     form = cgi.FieldStorage()
@@ -132,30 +125,9 @@ def main():
     if poll:
         waitForNewMessages()
 
-    #log("{0} - Printing Messages".format(today))
     printMessages()
-
 
 if __name__ == "__main__":
     main()
     
 
-#def newMessage():
-#    with open(fileName, 'r') as f:
-#        for line in f:
-#            print(line)
-#
-#def pushMessage(msg):
-#    with open(fileName, 'a') as f:
-#        f.write(msg + os.linesep)
-#
-#    newMsg.set()
-#
-#class thread1(Thread):
-#    def run(self):
-#        newMsg.wait(10)
-#        if newMsg.is_set():
-#            newMessage()
-#            newMsg.clear()
-#        else:
-#            print("Thread not set, exiting")

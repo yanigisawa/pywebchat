@@ -1,30 +1,51 @@
 <html>
-<head><title>PyWebChat</title></head>
+<head><title>Web Chat</title></head>
 <body>
 <style>
     ul { list-style-type: none; }
-    body { margin-left: 5px }
-    .loading { display: none; }
+    body { margin-left: 5px; position: relative; }
     .metaData {
-        font: 0.7em;
         font-weight: bold;
+		font-size: 90%;
     }
-    .message {
-    }
+	.messageLog {
+		overflow: auto;
+		position: absolute;
+		bottom: 135;
+		left: 0;
+	}
+	.input {
+		position: absolute;
+		bottom: 100;
+		left: 0;
+	}
+	#message { width: 500px; }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
-<label>Name:</label>
-<input type="text" id="userName" value="someUser" />
-<label>Message:</label>
-<input type="text" id="message" value="someMessage" />
-<input type="button" id="newMessage" name="newMessage" value="Post"/>
+<div class="messageLog">
+	<div id="div1" style="height: 500px;">
+		<div id="div2" style="height: inherit; overflow: auto; ">
+	        <div id="messageLog"></div>
+		</div>
+	</div>
+</div>
 
-<img src="285.gif" class="loading" id="loading" />
-<div id="messageLog"></div>
+<div class="input"> 
+	<label>Name:</label>
+	<input type="text" id="userName" value="someUser" />
+	<label>Message:</label>
+	<input type="text" id="message" value="someMessage" />
+	<input type="button" id="newMessage" name="newMessage" value="Post"/>
+
+</div>
 
 <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script src="jquery.hotkeys.js"></script>
 <script type="text/javascript">
+
+var totalMessageCount = 0;
+var titleToggleInterval;
 
 function formatTime(d) {
     var a_p = "AM";
@@ -35,20 +56,14 @@ function formatTime(d) {
         curr_hour = curr_hour - 12;
     }
 
-    if (curr_hour == 0) {
-        curr_hour = 12;
-    }
+    if (curr_hour == 0) { curr_hour = 12; }
 
     var curr_min = d.getMinutes() + "";
     curr_hour = curr_hour + "";
 
-    if (curr_min.length == 1) {
-        curr_min = "0" + curr_min;
-    }
+    if (curr_min.length == 1) { curr_min = "0" + curr_min; }
 
-    if (curr_hour.legth == 1) {
-        curr_hour = "0" + curr_hour;
-    }
+    if (curr_hour.legth == 1) { curr_hour = "0" + curr_hour; }
 
     return curr_hour + ":" + curr_min + " " + a_p;
 }
@@ -64,6 +79,12 @@ function printMessages(messageArr) {
         messages += ": " + messageArr[i].message + "</span><br/>";
     }
     $("#messageLog").html(messages);
+	scrollToBottom();
+}
+
+function scrollToBottom() {
+	height = $("#div2")[0].scrollHeight;
+	$('#div2').animate( { scrollTop: height }, 1000); 
 }
 
 function postMessage() {
@@ -79,12 +100,12 @@ function postMessage() {
             if (result.success) {
                 printMessages(result.data);
             }
-            $("#loading").fadeToggle();
         },
         error: function() { 
-            $("#loading").fadeToggle();
             alert("failed ajax call."); 
-        }
+        },
+		complete: function() {
+		}
     });
 }
 
@@ -96,13 +117,14 @@ function readMessages() {
         success: function(result) {
             if (result.success) {
                 printMessages(result.data);
+				totalMessageCount = result.data.length;
             }
-            $("#loading").fadeToggle();
         },
         error: function() { 
-            $("#loading").fadeToggle();
             alert("failed ajax call."); 
-        }
+        },
+		complete: function () {
+		}
     });
 }
 
@@ -115,13 +137,27 @@ $(document).ready(function() {
 
         if($.trim($("#message").val()).length) {
             postMessage();
-            $(".loading").fadeToggle();
         }
     });
 
-    $("#loading").fadeToggle();
+	$("#message").bind("keydown", "ctrl+return", postMessage());
+
+	$("#message").focus(function() { 
+		clearInterval(titleToggleInterval); 
+		document.title = "Web Chat";
+	} );
+
     readMessages();
 });
+
+function toggleTitle() {
+	var text = document.title;
+	if (text == "New Message") { text = "Look Here"; }
+	else { text = "New Message" }
+
+	document.title = text;
+}
+
 
 (function poll(){
     $.ajax({ 
@@ -131,7 +167,13 @@ $(document).ready(function() {
             poll: true
         },
         success: function(result){
-            if (result.success) { printMessages(result.data); }
+            if (result.success) { 
+				if (result.data.length > totalMessageCount) {
+					totalMessageCount = result.data.length;
+					titleToggleInterval = setInterval(toggleTitle, 1000);
+				}
+				printMessages(result.data); 
+			}
         }, 
         dataType: "json", 
         complete: poll, 
