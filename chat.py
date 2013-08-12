@@ -46,17 +46,19 @@ def log(msg):
         f.write(msg + "\n")
 
 class Message(object):
-    user = None
-    message = None
-    date = None
+    def __init__(self, user = None, message = None, date = None):
+        self.user = user
+        self.message = message
+        self.date = date
 
     def __str__(self):
         return "{0} - {1}: {2}".format(self.date, self.user, self.message)
 
 class ApiResult(object):
-    success = True
-    message = None
-    data = []
+    def init(self, success = True, message = None, data = []):
+        self.success = success
+        self.message = message
+        self.data = data
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
@@ -91,16 +93,21 @@ def printMessages():
         with open(fileName, 'r') as f:
             for line in f:
                 m = json2obj(line.strip())
-                msg = Message()
-                msg.user = m.user
-                msg.date = m.date
-                msg.message = m.message
+                msg = Message(user = m.user, date = m.date, message = m.message)
                 messages.append(msg)
 
         result.data = messages
 
     print(json.dumps(result, cls=MessageEncoder))
-            
+
+def logUserPoll(name):
+    pass
+    # make this thread safe
+    #with (userFileName, 'a') as f:
+
+
+    # end thread safety requirement
+
 def waitForNewMessages():
     observer = Observer()
     event_handler = FileChangeHandler()
@@ -114,15 +121,17 @@ def main():
     form = cgi.FieldStorage()
     messageSubmitted = form.getvalue("message", "")
     poll = form.getvalue("poll", "")
+    name = form.getvalue("name", "")
 
     if messageSubmitted:
         msg = Message()
-        msg.user = form.getvalue("name", "")
+        msg.user = name
         msg.message = form.getvalue("message", "")
         msg.date = today
         storeMessage(msg)
 
     if poll:
+        logUserPoll(name)
         waitForNewMessages()
 
     printMessages()
