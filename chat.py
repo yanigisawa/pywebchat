@@ -22,6 +22,7 @@ from collections import namedtuple
 
 today = datetime.utcnow()
 fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
+userFileName = "chat/users_{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
 
 _newMsg = Event()
 class FileChangeHandler(LoggingEventHandler):
@@ -31,12 +32,14 @@ class FileChangeHandler(LoggingEventHandler):
         pass
 
     def on_any_event(self, event):
-        f = os.getcwd()
-        f = os.path.join(f, fileName)
-        if os.path.realpath(event.src_path) != f:
-            return
+        currentDirectory = os.getcwd()
+        f = os.path.join(currentDirectory, fileName)
+        if os.path.realpath(event.src_path) == f:
+            _newMsg.set()
 
-        _newMsg.set()
+        u = os.path.join(currentDirectory, userFileName)
+        if os.path.realpath(event.src_path) == u:
+            _newMsg.set()
 
     def on_modified(self, event):
         pass
@@ -54,8 +57,19 @@ class Message(object):
     def __str__(self):
         return "{0} - {1}: {2}".format(self.date, self.user, self.message)
 
+
+class User(object):
+    def __init__(self, name = None, date = None):
+        self.name = name
+        self.date = date
+
+class ChatApiResponse(object):
+    def __init__(self, messages = [], users = []):
+        self.messages = messages
+        self.users = users
+
 class ApiResult(object):
-    def init(self, success = True, message = None, data = []):
+    def __init__(self, success = True, message = None, data = None):
         self.success = success
         self.message = message
         self.data = data
@@ -74,20 +88,20 @@ class MessageEncoder(json.JSONEncoder):
         if isinstance(obj, ApiResult):
             return obj.__dict__
 
+        if isinstance(obj, User):
+            return obj.__dict__
+
+        if isinstance(obj, ChatApiResponse):
+            return obj.__dict__
+
         return super(MessageEncoder, self).default(obj)
 
 def storeMessage(msg):
     with open(fileName, 'a') as f:
         f.write("{0}\n".format(json.dumps(msg, cls=MessageEncoder)))
 
-def printMessages():
-    print("Content-type: application/json")
-    print(os.linesep)
-
+def getMessageArray():
     messages = []
-    
-    result = ApiResult()
-    result.success = True
 
     if os.path.isfile(fileName): 
         with open(fileName, 'r') as f:
@@ -96,17 +110,36 @@ def printMessages():
                 msg = Message(user = m.user, date = m.date, message = m.message)
                 messages.append(msg)
 
-        result.data = messages
+    return messages
+
+def getUserArray():
+    users = []
+
+    if os.path.isfile(userFileName): 
+        with open(userFileName, 'r') as f:
+            for line in f:
+                u = json2obj(line.strip())
+                user = User(name = u.name, date = u.date)
+                users.append(u)
+
+    return users
+
+def printMessages():
+    print("Content-type: application/json")
+    print(os.linesep)
+
+    result = ApiResult()
+    result.success = True
+    chatResponse = ChatApiResponse(messages = getMessageArray(), users = getUserArray())
+    result.data = chatResponse
 
     print(json.dumps(result, cls=MessageEncoder))
 
 def logUserPoll(name):
-    pass
-    # make this thread safe
-    #with (userFileName, 'a') as f:
+    user = User(name = name, date = today)
 
-
-    # end thread safety requirement
+    with open(userFileName, 'w') as f:
+        f.write("{0}\n".format(json.dumps(user, cls=MessageEncoder)))
 
 def waitForNewMessages():
     observer = Observer()
@@ -115,7 +148,7 @@ def waitForNewMessages():
     path = os.path.join(path, "chat")
     observer.schedule(event_handler, path, recursive=False)
     observer.start()
-    _newMsg.wait(25)
+    _newMsg.wait(55)
 
 def main():
     form = cgi.FieldStorage()

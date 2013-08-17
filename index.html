@@ -8,35 +8,42 @@
         font-weight: bold;
 		font-size: 90%;
     }
-	.messageLog {
-		overflow: auto;
-	}
-	.input {
-	}
-	#message { width: 500px; }
+	.input { width: 100%; }
+	#message { width: 62%; }
+    #users { 
+        float: right; width: 15%; height: 80%;
+        margin-left: 5px;
+    }
+    #messageLog {
+        overflow-y: auto;
+        height: 80%;
+        display: block;
+        margin: 0 0 5px 5px;
+        padding: 0 0 5px 5px;
+        border: 1px solid black;
+    }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
-<div class="messageLog">
-	<div id="div1" style="height: 300px; display: block;">
-		<div id="div2" style="height: inherit; overflow: auto; ">
-	        <div id="messageLog"></div>
-		</div>
-	</div>
+<div id="users">
+    <h3>Users</h3>
+    <span class="user">Bob</span></br>
+    <span class="user">Jen</span>
 </div>
 
+<div id="messageLog"></div>
+
 <div class="input"> 
-	<label>Name:</label>
-	<input type="text" id="userName" value="" />
-	<label>Message:</label>
+	<label for="userName">Name:</label>
+	<input type="text" id="userName" value=""></input>
+	<label for="message">Message:</label>
 	<input type="text" id="message" value="" />
 	<input type="button" id="newMessage" name="newMessage" value="Post"/>
-
 </div>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="jquery.hotkeys.js"></script>
-<script src="chatClient.js"></script>
+<script src="javascript.py"></script>
 
 </body>
 </html>

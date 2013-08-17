@@ -1,4 +1,3 @@
-
 var ChatClient =  { 
     totalMessageCount: 0,
     titleToggleInterval: 0,
@@ -26,8 +25,9 @@ var ChatClient =  {
     },
 
     scrollToBottom: function () {
-        height = $("#div2")[0].scrollHeight;
-        $('#div2').animate( { scrollTop: height }, 1000); 
+        //height = $("#messageLog")[0].scrollHeight;
+        height = $("#messageLog").prop("scrollHeight");
+        $('#messageLog').animate( { scrollTop: height }, 1000); 
     },
 
     printMessages: function(messageArr) {
@@ -42,9 +42,14 @@ var ChatClient =  {
                 messages += ": " + messageArr[i].message + "</span><br/>";
             }
         }
-        document.getElementById("messageLog").innerHTML += messages;
-        //$("#messageLog").html(messages);
+        $("#messageLog").append(messages);
         ChatClient.scrollToBottom();
+    },
+
+    printUsers: function(userArray) {
+        var userCount = userArray.length;
+        var userString = "";
+
     },
 
     postMessage: function () {
@@ -90,9 +95,9 @@ var ChatClient =  {
             url: "chat.py",
             dataType: "json",
             success: function(result) {
-                if (result.success && result.data !== undefined) {
-                    ChatClient.printMessages(result.data);
-                    ChatClient.totalMessageCount = result.data.length;
+                if (result.success && result.data !== undefined && result.data.messages !== undefined) {
+                    ChatClient.printMessages(result.data.messages);
+                    ChatClient.totalMessageCount = result.data.messages.length;
                 }
             },
             error: function() { 
@@ -122,21 +127,24 @@ var ChatClient =  {
             },
             success: function(result){
                 if (result.success && result.data !== undefined) { 
-                    var shouldToggleTitleBar = result.data.length > ChatClient.totalMessageCount &&
-                        result.data[result.data.length - 1].user != $("#userName").val();
+                    messages = result.data.messages;
+                    messageCount = messages.length;
+                    users = result.data.users;
+                    var shouldToggleTitleBar = messageCount > ChatClient.totalMessageCount &&
+                        messages[messageCount - 1].user != $("#userName").val();
                     if (shouldToggleTitleBar) {
                         clearInterval(ChatClient.titleToggleInterval);
                         ChatClient.titleToggleInterval = setInterval(ChatClient.toggleTitle, 1000);
                     }
 
-                    if (result.data.length > ChatClient.totalMessageCount) {
-                        ChatClient.printMessages(result.data); 
+                    if (messageCount > ChatClient.totalMessageCount) {
+                        ChatClient.printMessages(messages); 
                     }
-                    ChatClient.totalMessageCount = result.data.length;
+                    ChatClient.totalMessageCount = messageCount;
                 }
             }, 
             dataType: "json", 
-            complete: ChatClient.poll, 
+            //complete: ChatClient.poll, 
             timeout: 60000 
         });
     }
@@ -161,7 +169,7 @@ $(document).ready(function() {
     } );
 
     ChatClient.readMessages();
-    ChatClient.poll();
+    //ChatClient.poll();
 });
 
 
