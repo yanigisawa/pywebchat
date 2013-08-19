@@ -1,9 +1,24 @@
-var ChatClient =  { 
-    totalMessageCount: 0,
-    titleToggleInterval: 0,
-    isPostingMessage: false,
+var ChatClient = function(messageLog, userNameField, messageField, userLog) { 
+    var _messageLog = messageLog;
+    var _userNameField = userNameField;
+    var _messageField = messageField;
+    var _userLog = userLog;
 
-    formatTime: function(d) {
+    this.IdleInterval = 30000;
+    this.Active = null;
+    this.TitleToggleInterval = null;
+    this.IsPostingMessage = false;
+    this.TotalMessageCount = 0;
+
+    this.ToggleTitle = function () {
+        var text = document.title;
+        if (text == "New Message") { text = "Look Here"; }
+        else { text = "New Message" }
+
+        document.title = text;
+    };
+
+    var formatTime = function(d) {
         var a_p = "AM";
         d = new Date(d + "Z");
         var curr_hour = d.getHours();
@@ -22,154 +37,206 @@ var ChatClient =  {
         if (curr_hour.legth == 1) { curr_hour = "0" + curr_hour; }
 
         return curr_hour + ":" + curr_min + " " + a_p;
-    },
+    };
 
-    scrollToBottom: function () {
-        //height = $("#messageLog")[0].scrollHeight;
-        height = $("#messageLog").prop("scrollHeight");
-        $('#messageLog').animate( { scrollTop: height }, 1000); 
-    },
+    this.scrollToBottom = function () {
+        height = _messageLog.prop("scrollHeight");
+        _messageLog.animate( { scrollTop: height }, 1000); 
+    };
 
-    printMessages: function(messageArr) {
+    this.PrintMessages = function(messageArr) {
         var messageCount = messageArr.length;
-        var messages = "";
+        var messages = [];
         for(var i = 0; i < messageCount; i++) {
-            if (i >= ChatClient.totalMessageCount) {
-                messages += "<span class='metaData'>";
-                messages += messageArr[i].user + " - " ;
-                messages += ChatClient.formatTime(messageArr[i].date);
-                messages += "</span><span class='message'>";
-                messages += ": " + messageArr[i].message + "</span><br/>";
+            if (i >= this.TotalMessageCount) {
+                messages.push("<span class='metaData'>", messageArr[i].user, " - ");
+                messages.push(formatTime(messageArr[i].date), "</span><span class='message'>");
+                messages.push(": ", messageArr[i].message, "</span><br/>");
             }
         }
-        $("#messageLog").append(messages);
-        ChatClient.scrollToBottom();
-    },
+        _messageLog.append(messages.join(""));
+        this.scrollToBottom();
+    };
 
-    printUsers: function(userArray) {
+    this.printUsers = function(userArray) {
         var userCount = userArray.length;
-        var userString = "";
+        var userStringArr = [];
 
-    },
+        for (var i = 0; i < userCount; i++) {
+            if (userArray[i].active) {
+                userStringArr.push("<img src='img/online.png' height='16px' width='16px' />");
+            } else {
+                userStringArr.push("<img src='img/idle.png' height='16px' width='16px' />");
+            }
+            userStringArr.push("<span class='user'>", userArray[i].name, "</span></br>");
+        }
+        _userLog.html(userStringArr.join(""));
+    };
 
-    postMessage: function () {
+    this.postMessage = function () {
 
-        if(!$.trim($("#userName").val()).length) {
+        if(!$.trim(_userNameField.val()).length) {
             alert("Please enter a user name to post as.");
             return;
         }
 
-        if(!$.trim($("#message").val()).length) {
+        if(!$.trim(_messageField.val()).length) {
             return;
         }
 
-        ChatClient.isPostingMessage = true;
+        this.IsPostingMessage = true;
+        var msg = _messageField.val();
+        _messageField.val("");
+        _messageField.prop("readonly", true);
+        var that = this;
 
         $.ajax({
             type: "POST",
             url: "chat.py",
             dataType: "json",
             data: { 
-                name: $("#userName").val(), 
-                message: $("#message").val(),
+                name: _userNameField.val(), 
+                message: msg,
             },
             success: function(result) {
                 if (result.success) {
-                    ChatClient.printMessages(result.data);
-                    ChatClient.totalMessageCount++;
+                    that.PrintMessages(result.data.messages);
+                    that.TotalMessageCount++;
                 }
-                $("#message").val("");
             },
             error: function() { 
                 alert("failed ajax call."); 
             },
             complete: function() {
-                ChatClient.isPostingMessage = false;
+                that.IsPostingMessage = false;
+                _messageField.prop("readonly", false);
             }
         });
-    },
+    };
 
-    readMessages: function () {
+    this.readMessages = function () {
+        var that = this;
+        var success = function(result) {
+            if (result.success && result.data !== undefined && result.data.messages !== undefined) {
+                that.PrintMessages(result.data.messages);
+                that.printUsers(result.data.users);
+                that.TotalMessageCount = result.data.messages.length;
+            }
+        };
+
         $.ajax({
             type: "GET",
             url: "chat.py",
             dataType: "json",
-            success: function(result) {
-                if (result.success && result.data !== undefined && result.data.messages !== undefined) {
-                    ChatClient.printMessages(result.data.messages);
-                    ChatClient.totalMessageCount = result.data.messages.length;
-                }
-            },
+            success: success,
             error: function() { 
                 alert("failed ajax call."); 
             },
             complete: function () {
             }
         });
-    },
-
-
-    toggleTitle: function () {
-        var text = document.title;
-        if (text == "New Message") { text = "Look Here"; }
-        else { text = "New Message" }
-
-        document.title = text;
-    },
-
-    poll: function (){
-        $.ajax({ 
-            url: "chat.py", 
-            type: "POST",
-            data: {
-                poll: true,
-                name: $("#userName").val(), 
-            },
-            success: function(result){
-                if (result.success && result.data !== undefined) { 
-                    messages = result.data.messages;
-                    messageCount = messages.length;
-                    users = result.data.users;
-                    var shouldToggleTitleBar = messageCount > ChatClient.totalMessageCount &&
-                        messages[messageCount - 1].user != $("#userName").val();
-                    if (shouldToggleTitleBar) {
-                        clearInterval(ChatClient.titleToggleInterval);
-                        ChatClient.titleToggleInterval = setInterval(ChatClient.toggleTitle, 1000);
-                    }
-
-                    if (messageCount > ChatClient.totalMessageCount) {
-                        ChatClient.printMessages(messages); 
-                    }
-                    ChatClient.totalMessageCount = messageCount;
-                }
-            }, 
-            dataType: "json", 
-            //complete: ChatClient.poll, 
-            timeout: 60000 
-        });
-    }
+    };
 };
+
+var chatClient = new ChatClient($("#messageLog"), $("#userName"), $("#message"), $("#users"));
+
+ChatClient.poll = function (){
+    $.ajax({ 
+        url: "chat.py", 
+        type: "POST",
+        data: {
+            poll: true,
+        },
+        success: function(result){
+            if (result.success && result.data !== undefined) { 
+                messages = result.data.messages;
+                messageCount = messages.length;
+                chatClient.printUsers(result.data.users);
+                var shouldToggleTitleBar = messageCount > chatClient.TotalMessageCount &&
+                    messages[messageCount - 1].user != $("#userName").val();
+                if (shouldToggleTitleBar) {
+                    clearInterval(chatClient.TitleToggleInterval);
+                    chatClient.TitleToggleInterval = setInterval(chatClient.toggleTitle, 1000);
+                }
+
+                if (messageCount > chatClient.TotalMessageCount) {
+                    chatClient.PrintMessages(messages);
+                }
+                chatClient.TotalMessageCount = messageCount;
+            }
+        }, 
+        dataType: "json", 
+        complete: ChatClient.poll, 
+        timeout: 60000 
+    });
+};
+
+ChatClient.SendActivity = function(isActive) { 
+    if (!$.trim($("#userName").val())) {
+        return;
+    }
+
+    chatClient.Active = isActive;
+
+    $.ajax({
+        type: "POST",
+        url: "chat.py",
+        dataType: "json",
+        data: { 
+            name: $("#userName").val(), 
+            activity: true,
+            active: chatClient.Active,
+        },
+        success: function(result) {
+            if (result.success) {
+                chatClient.printUsers(result.data.users);
+            }
+        },
+        error: function() { 
+            alert("failed ajax call."); 
+        }
+    });
+}
+
+ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
+
+ChatClient.SetUserIdle = function() {
+    var active_tmp = chatClient.Active;
+    clearTimeout(ChatClient.ActivityTimer);
+    if (active_tmp) { ChatClient.SendActivity(false); }
+};
+
+ChatClient.SetUserActive = function() {
+    clearTimeout(ChatClient.ActivityTimer);
+    ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
+    if (!$("#userName").is(":focus") && !chatClient.Active) { ChatClient.SendActivity(true); }
+};
+
+
+$(document).bind("mousemove", ChatClient.SetUserActive);
+$(document).bind("keypress", ChatClient.SetUserActive);
+$(window).unload(ChatClient.SetUserIdle);
 
 $(document).ready(function() {
     $("#newMessage").click(function () {
         if($.trim($("#message").val()).length) {
-            ChatClient.postMessage();
+            chatClient.postMessage();
         }
     });
 
     $("#message").keypress(function (e) {
-        if (e.keyCode == 13 && !ChatClient.isPostingMessage && $.trim($("#message").val()).length) {
-            ChatClient.postMessage();
+        if (e.keyCode == 13 && !chatClient.IsPostingMessage && $.trim($("#message").val()).length) {
+            chatClient.postMessage();
         }
     });
 
     $("#message").focus(function() { 
-        clearInterval(ChatClient.titleToggleInterval); 
+        clearInterval(chatClient.TitleToggleInterval); 
         document.title = "Web Chat";
     } );
 
-    ChatClient.readMessages();
-    //ChatClient.poll();
+    chatClient.readMessages();
+    ChatClient.poll();
 });
 
 

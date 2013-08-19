@@ -10,9 +10,10 @@
     }
 	.input { width: 100%; }
 	#message { width: 62%; }
-    #users { 
+    .usersContainer { 
         float: right; width: 15%; height: 80%;
         margin-left: 5px;
+        margin-top: -22px;
     }
     #messageLog {
         overflow-y: auto;
@@ -25,10 +26,9 @@
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
-<div id="users">
+<div class="usersContainer">
     <h3>Users</h3>
-    <span class="user">Bob</span></br>
-    <span class="user">Jen</span>
+    <div id="users"></div>
 </div>
 
 <div id="messageLog"></div>
@@ -44,6 +44,5 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="jquery.hotkeys.js"></script>
 <script src="javascript.py"></script>
-
 </body>
 </html>

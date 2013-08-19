@@ -22,7 +22,6 @@ from collections import namedtuple
 
 today = datetime.utcnow()
 fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
-userFileName = "chat/users_{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
 
 _newMsg = Event()
 class FileChangeHandler(LoggingEventHandler):
@@ -35,10 +34,6 @@ class FileChangeHandler(LoggingEventHandler):
         currentDirectory = os.getcwd()
         f = os.path.join(currentDirectory, fileName)
         if os.path.realpath(event.src_path) == f:
-            _newMsg.set()
-
-        u = os.path.join(currentDirectory, userFileName)
-        if os.path.realpath(event.src_path) == u:
             _newMsg.set()
 
     def on_modified(self, event):
@@ -59,9 +54,12 @@ class Message(object):
 
 
 class User(object):
-    def __init__(self, name = None, date = None):
+    def __init__(self, name = None, active = False):
         self.name = name
-        self.date = date
+        self.active = active
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 class ChatApiResponse(object):
     def __init__(self, messages = [], users = []):
@@ -98,31 +96,37 @@ class MessageEncoder(json.JSONEncoder):
 
 def storeMessage(msg):
     with open(fileName, 'a') as f:
-        f.write("{0}\n".format(json.dumps(msg, cls=MessageEncoder)))
+        f.write("Message: {0}\n".format(json.dumps(msg, cls=MessageEncoder)))
 
-def getMessageArray():
+def getModifiedUsersArray(users, u):
+    userObjectToReturn = User(name = u.name, active = u.active)
+
+    if u in users:
+        for idx, user in enumerate(users):
+            if u == user:
+                users[idx].active = u.active
+                break
+    else:
+        users.append(userObjectToReturn)
+
+    return users
+
+def readActivityFile():
     messages = []
+    users = []
 
     if os.path.isfile(fileName): 
         with open(fileName, 'r') as f:
             for line in f:
-                m = json2obj(line.strip())
-                msg = Message(user = m.user, date = m.date, message = m.message)
-                messages.append(msg)
+                if line.startswith("Message: "):
+                    m = json2obj(line.lstrip("Message: ").strip())
+                    msg = Message(user = m.user, date = m.date, message = m.message)
+                    messages.append(msg)
+                elif line.startswith("UserActivity: "):
+                    u = json2obj(line.lstrip("UserActivity: ").strip())
+                    users = getModifiedUsersArray(users, u)
 
-    return messages
-
-def getUserArray():
-    users = []
-
-    if os.path.isfile(userFileName): 
-        with open(userFileName, 'r') as f:
-            for line in f:
-                u = json2obj(line.strip())
-                user = User(name = u.name, date = u.date)
-                users.append(u)
-
-    return users
+    return (messages, users)
 
 def printMessages():
     print("Content-type: application/json")
@@ -130,16 +134,18 @@ def printMessages():
 
     result = ApiResult()
     result.success = True
-    chatResponse = ChatApiResponse(messages = getMessageArray(), users = getUserArray())
+    messages, users = readActivityFile()
+    chatResponse = ChatApiResponse(messages = messages, users = users)
     result.data = chatResponse
 
     print(json.dumps(result, cls=MessageEncoder))
 
-def logUserPoll(name):
-    user = User(name = name, date = today)
+def logUserActivity(name, active):
+    user = User(name = name, active = (active == "true"))
 
-    with open(userFileName, 'w') as f:
-        f.write("{0}\n".format(json.dumps(user, cls=MessageEncoder)))
+    if len(name.strip()) > 0: 
+        with open(fileName, 'a') as f:
+            f.write("UserActivity: {0}\n".format(json.dumps(user, cls=MessageEncoder)))
 
 def waitForNewMessages():
     observer = Observer()
@@ -155,6 +161,8 @@ def main():
     messageSubmitted = form.getvalue("message", "")
     poll = form.getvalue("poll", "")
     name = form.getvalue("name", "")
+    active = form.getvalue("active", "")
+    activity = form.getvalue("activity", "")
 
     if messageSubmitted:
         msg = Message()
@@ -163,8 +171,10 @@ def main():
         msg.date = today
         storeMessage(msg)
 
+    if activity:
+        logUserActivity(name, active)
+
     if poll:
-        logUserPoll(name)
         waitForNewMessages()
 
     printMessages()
