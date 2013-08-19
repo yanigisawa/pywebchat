@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 siteFolder=/home/yanigisawa/jamesralexander.com/webchat
 
