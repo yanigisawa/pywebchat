@@ -198,13 +198,13 @@ ChatClient.SendActivity = function(isActive) {
     });
 }
 
-ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
-
 ChatClient.SetUserIdle = function() {
     var active_tmp = chatClient.Active;
     clearTimeout(ChatClient.ActivityTimer);
     if (active_tmp) { ChatClient.SendActivity(false); }
 };
+
+ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
 
 ChatClient.SetUserActive = function() {
     clearTimeout(ChatClient.ActivityTimer);
