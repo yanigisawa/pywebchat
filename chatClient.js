@@ -156,7 +156,7 @@ ChatClient.poll = function (){
                     messages[messageCount - 1].user != $("#userName").val();
                 if (shouldToggleTitleBar) {
                     clearInterval(chatClient.TitleToggleInterval);
-                    chatClient.TitleToggleInterval = setInterval(chatClient.toggleTitle, 1000);
+                    chatClient.TitleToggleInterval = setInterval(chatClient.ToggleTitle, 1000);
                 }
 
                 if (messageCount > chatClient.TotalMessageCount) {
