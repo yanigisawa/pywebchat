@@ -215,7 +215,7 @@ ChatClient.SetUserActive = function() {
 
 $(document).bind("mousemove", ChatClient.SetUserActive);
 $(document).bind("keypress", ChatClient.SetUserActive);
-$(window).unload(ChatClient.SetUserIdle);
+$(window).bind("beforeunload", ChatClient.SetUserIdle);
 
 $(document).ready(function() {
     $("#newMessage").click(function () {
