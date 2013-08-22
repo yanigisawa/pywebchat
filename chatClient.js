@@ -4,7 +4,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
     var _messageField = messageField;
     var _userLog = userLog;
 
-    this.IdleInterval = 30000;
+    this.IdleInterval = 60000;
     this.Active = null;
     this.TitleToggleInterval = null;
     this.IsPostingMessage = false;
