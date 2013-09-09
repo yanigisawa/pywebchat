@@ -5,19 +5,15 @@
 ## Actor 1 in module1.py
 ##
 
-import cgi;
-import cgitb; cgitb.enable();
+import cgi, cgitb; cgitb.enable();
 
-import time
-from datetime import datetime
-import os
+import time, os, json, dateutil.parser
+from datetime import datetime, timedelta
 
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
-
 from threading import Event
 
-import json
 from collections import namedtuple
 
 today = datetime.utcnow()
@@ -39,24 +35,40 @@ class FileChangeHandler(LoggingEventHandler):
     def on_modified(self, event):
         pass
 
-def log(msg):
-    with open("chat/log.txt", 'a') as f:
-        f.write(msg + "\n")
-
 class Message(object):
     def __init__(self, user = None, message = None, date = None):
         self.user = user
         self.message = message
         self.date = date
+    
+    @property
+    def message(self): 
+        return self.m_message
+
+    @message.setter
+    def message(self, value):
+        if value != None: 
+            self.m_message = value.replace("<", "&lt;").replace(">", "&gt;")
 
     def __str__(self):
         return "{0} - {1}: {2}".format(self.date, self.user, self.message)
 
 
-class User(object):
-    def __init__(self, name = None, active = False):
+class UserActivity(object):
+    def __init__(self, name = None, active = False, date = None):
         self.name = name
-        self.active = active
+
+        if isinstance(active, str):
+            self.active = (active == "true")
+        else:
+            self.active = active
+
+        if isinstance(date, datetime):
+            self.date = date
+        elif date != None:
+            self.date = dateutil.parser.parse(date)
+        else:
+            self.date = None
 
     def __eq__(self, other):
         return self.name == other.name
@@ -86,7 +98,7 @@ class MessageEncoder(json.JSONEncoder):
         if isinstance(obj, ApiResult):
             return obj.__dict__
 
-        if isinstance(obj, User):
+        if isinstance(obj, UserActivity):
             return obj.__dict__
 
         if isinstance(obj, ChatApiResponse):
@@ -99,12 +111,18 @@ def storeMessage(msg):
         f.write("Message: {0}\n".format(json.dumps(msg, cls=MessageEncoder)))
 
 def getModifiedUsersArray(users, u):
-    userObjectToReturn = User(name = u.name, active = u.active)
+    userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date)
 
     if u in users:
         for idx, user in enumerate(users):
             if u == user:
-                users[idx].active = u.active
+                today = datetime.utcnow()
+                twoMinutesAgo = today + timedelta(minutes = -2)
+                print("UserDate: {0} - twoMinutesAgo: {1}".format(user.date, twoMinutesAgo))
+                if (user.date != None and user.date <= twoMinutesAgo):
+                    users.remove(user)
+                else:
+                    users[idx].active = u.active
                 break
     else:
         users.append(userObjectToReturn)
@@ -120,7 +138,7 @@ def readActivityFile():
             for line in f:
                 if line.startswith("Message: "):
                     m = json2obj(line.lstrip("Message: ").strip())
-                    msg = Message(user = m.user, date = m.date, message = m.message)
+                    msg = Message(user = m.user, date = m.date, message = m.m_message)
                     messages.append(msg)
                 elif line.startswith("UserActivity: "):
                     u = json2obj(line.lstrip("UserActivity: ").strip())
@@ -140,12 +158,10 @@ def printMessages():
 
     print(json.dumps(result, cls=MessageEncoder))
 
-def logUserActivity(name, active):
-    user = User(name = name, active = (active == "true"))
-
-    if len(name.strip()) > 0: 
-        with open(fileName, 'a') as f:
-            f.write("UserActivity: {0}\n".format(json.dumps(user, cls=MessageEncoder)))
+def logUserActivity(userActivity):
+    with open(fileName, 'a') as f:
+        s = "UserActivity: {0}\n".format(json.dumps(userActivity, cls=MessageEncoder))
+        f.write(s)
 
 def waitForNewMessages():
     observer = Observer()
@@ -171,8 +187,9 @@ def main():
         msg.date = today
         storeMessage(msg)
 
-    if activity:
-        logUserActivity(name, active)
+    if activity and len(name.strip()) > 0:
+        u = UserActivity(name = name, active = active, date = datetime.utcnow())
+        logUserActivity(u)
 
     if poll:
         waitForNewMessages()
