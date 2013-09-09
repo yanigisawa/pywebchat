@@ -20,6 +20,8 @@ today = datetime.utcnow()
 fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
 
 _newMsg = Event()
+_observer = Observer()
+
 class FileChangeHandler(LoggingEventHandler):
     def on_created(self, event):
         pass
@@ -31,6 +33,7 @@ class FileChangeHandler(LoggingEventHandler):
         f = os.path.join(currentDirectory, fileName)
         if os.path.realpath(event.src_path) == f:
             _newMsg.set()
+            _observer.stop()
 
     def on_modified(self, event):
         pass
@@ -116,16 +119,17 @@ def getModifiedUsersArray(users, u):
     if u in users:
         for idx, user in enumerate(users):
             if u == user:
-                today = datetime.utcnow()
-                twoMinutesAgo = today + timedelta(minutes = -2)
-                print("UserDate: {0} - twoMinutesAgo: {1}".format(user.date, twoMinutesAgo))
-                if (user.date != None and user.date <= twoMinutesAgo):
-                    users.remove(user)
-                else:
-                    users[idx].active = u.active
+                users[idx].active = u.active
                 break
     else:
         users.append(userObjectToReturn)
+
+    today = datetime.utcnow()
+    twoMinutesAgo = today + timedelta(minutes = -2)
+
+    for user in users:
+        if (user.date != None and user.date <= twoMinutesAgo):
+            users.remove(user)
 
     return users
 
@@ -164,12 +168,11 @@ def logUserActivity(userActivity):
         f.write(s)
 
 def waitForNewMessages():
-    observer = Observer()
     event_handler = FileChangeHandler()
     path = os.getcwd()
     path = os.path.join(path, "chat")
-    observer.schedule(event_handler, path, recursive=False)
-    observer.start()
+    _observer.schedule(event_handler, path, recursive=False)
+    _observer.start()
     _newMsg.wait(55)
 
 def main():

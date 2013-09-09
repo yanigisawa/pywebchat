@@ -52,7 +52,7 @@ class ChatUnitTests(unittest.TestCase):
 
     def test_UserIsLoggedOut_AfterTwoMinutesWithoutPolling(self):
         today = datetime.utcnow()
-        threeMinuteAgoDelta = timedelta(minutes = -2)
+        threeMinuteAgoDelta = timedelta(minutes = -3)
         u = chat.UserActivity(name = "TestUser", active = False, date = today + threeMinuteAgoDelta)
         chat.logUserActivity(u)
 
@@ -68,7 +68,22 @@ class ChatUnitTests(unittest.TestCase):
         msgs, users = chat.readActivityFile()
         self.assertEqual(1, len(msgs))
 
+    def test_UserIsLoggedIn_WhileTheyAreStillActiveOrPolling(self):
+        today = datetime.utcnow()
+        threeMinuteAgoDelta = timedelta(minutes = -3)
+        u = chat.UserActivity(name = "TestUser", active = False, date = today + threeMinuteAgoDelta)
+        chat.logUserActivity(u)
 
+        msg, users = chat.readActivityFile()
+        self.assertEqual(0, len(users))
+
+        u.date = today
+        chat.logUserActivity(u)
+
+        msg, users = chat.readActivityFile()
+        self.assertEqual(1, len(users))
+
+        
 def main():
     unittest.main()
 

@@ -105,7 +105,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
                 }
             },
             error: function() { 
-                alert("failed ajax call."); 
+                alert("failed to post message."); 
             },
             complete: function() {
                 that.IsPostingMessage = false;
@@ -130,7 +130,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             dataType: "json",
             success: success,
             error: function() { 
-                alert("failed ajax call."); 
+                alert("failed to read messages from server."); 
             },
             complete: function () {
             }
@@ -193,7 +193,7 @@ ChatClient.SendActivity = function(isActive) {
             }
         },
         error: function() { 
-            alert("failed ajax call."); 
+            alert("failed to send user activity."); 
         }
     });
 }
