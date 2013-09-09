@@ -201,7 +201,8 @@ ChatClient.SendActivity = function(isActive) {
 ChatClient.SetUserIdle = function() {
     var active_tmp = chatClient.Active;
     clearTimeout(ChatClient.ActivityTimer);
-    if (active_tmp) { ChatClient.SendActivity(false); }
+    ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, 120000);
+    ChatClient.SendActivity(false);
 };
 
 ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
@@ -215,7 +216,6 @@ ChatClient.SetUserActive = function() {
 
 $(document).bind("mousemove", ChatClient.SetUserActive);
 $(document).bind("keypress", ChatClient.SetUserActive);
-$(window).bind("beforeunload", ChatClient.SetUserIdle);
 
 $(document).ready(function() {
     $("#newMessage").click(function () {
