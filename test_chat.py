@@ -83,6 +83,19 @@ class ChatUnitTests(unittest.TestCase):
         msg, users = chat.readActivityFile()
         self.assertEqual(1, len(users))
 
+    def test_UserIsLoggedIn_WhileTheyAreTyping(self):
+        today = datetime.utcnow()
+        threeMinuteAgoDelta = timedelta(minutes = -3)
+        u = chat.UserActivity(name = "TestUser", active = False, date = today + threeMinuteAgoDelta)
+        chat.logUserActivity(u)
+
+        m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "test message")
+        chat.storeMessage(m)
+
+        msg, users = chat.readActivityFile()
+        self.assertEqual(1, len(users))
+
+
         
 def main():
     unittest.main()

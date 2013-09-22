@@ -66,15 +66,26 @@ class UserActivity(object):
         else:
             self.active = active
 
-        if isinstance(date, datetime):
-            self.date = date
-        elif date != None:
-            self.date = dateutil.parser.parse(date)
+        self.date = date
+
+    @property
+    def date(self):
+        return self.m_date
+
+    @date.setter
+    def date(self, value):
+        if isinstance(value, datetime):
+            self.m_date = value 
+        elif value != None:
+            self.m_date = dateutil.parser.parse(value)
         else:
-            self.date = None
+            self.m_date = None
 
     def __eq__(self, other):
         return self.name == other.name
+
+    def __repr__(self):
+        return "{0} - {1} - {2}".format(self.name, self.active, self.date)
 
 class ChatApiResponse(object):
     def __init__(self, messages = [], users = []):
@@ -102,7 +113,9 @@ class MessageEncoder(json.JSONEncoder):
             return obj.__dict__
 
         if isinstance(obj, UserActivity):
-            return obj.__dict__
+            x = {}
+            x["name"], x["date"], x["active"] = obj.name, obj.date, obj.active
+            return x
 
         if isinstance(obj, ChatApiResponse):
             return obj.__dict__
@@ -113,17 +126,26 @@ def storeMessage(msg):
     with open(fileName, 'a') as f:
         f.write("Message: {0}\n".format(json.dumps(msg, cls=MessageEncoder)))
 
+def logUserActivity(userActivity):
+    with open(fileName, 'a') as f:
+        s = "UserActivity: {0}\n".format(json.dumps(userActivity, cls=MessageEncoder))
+        f.write(s)
+
 def getModifiedUsersArray(users, u):
     userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date)
 
     if u in users:
-        for idx, user in enumerate(users):
+        for user in users:
             if u == user:
-                users[idx].active = u.active
+                user.active = u.active
+                user.date = u.date
                 break
     else:
         users.append(userObjectToReturn)
 
+    return users
+
+def removeInactiveUsers(users):
     today = datetime.utcnow()
     twoMinutesAgo = today + timedelta(minutes = -2)
 
@@ -132,6 +154,14 @@ def getModifiedUsersArray(users, u):
             users.remove(user)
 
     return users
+
+def setUserActivityDate(userArray, userName, date):
+    for user in userArray:
+        if user.name == userName: 
+            user.date = date
+            break
+
+    return userArray
 
 def readActivityFile():
     messages = []
@@ -144,9 +174,12 @@ def readActivityFile():
                     m = json2obj(line.lstrip("Message: ").strip())
                     msg = Message(user = m.user, date = m.date, message = m.m_message)
                     messages.append(msg)
+                    users = setUserActivityDate(users, msg.user, msg.date)
                 elif line.startswith("UserActivity: "):
                     u = json2obj(line.lstrip("UserActivity: ").strip())
                     users = getModifiedUsersArray(users, u)
+
+    users = removeInactiveUsers(users)
 
     return (messages, users)
 
@@ -162,10 +195,6 @@ def printMessages():
 
     print(json.dumps(result, cls=MessageEncoder))
 
-def logUserActivity(userActivity):
-    with open(fileName, 'a') as f:
-        s = "UserActivity: {0}\n".format(json.dumps(userActivity, cls=MessageEncoder))
-        f.write(s)
 
 def waitForNewMessages():
     event_handler = FileChangeHandler()
