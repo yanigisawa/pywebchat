@@ -7,7 +7,6 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
     this.IdleInterval = 60000;
     this.Active = null;
     this.TitleToggleInterval = null;
-    this.IsPostingMessage = false;
     this.TotalMessageCount = 0;
 
     this.ToggleTitle = function () {
@@ -84,11 +83,10 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             return;
         }
 
-        this.IsPostingMessage = true;
         var msg = _messageField.val();
         _messageField.val("");
         _messageField.prop("readonly", true);
-        var that = this;
+        _messageField.addClass("posting");
 
         $.ajax({
             type: "POST",
@@ -98,18 +96,12 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
                 name: _userNameField.val(), 
                 message: msg,
             },
-            success: function(result) {
-                if (result.success) {
-                    that.PrintMessages(result.data.messages);
-                    that.TotalMessageCount++;
-                }
-            },
             error: function() { 
                 alert("failed to post message."); 
             },
             complete: function() {
-                that.IsPostingMessage = false;
                 _messageField.prop("readonly", false);
+                _messageField.removeClass("posting");
             }
         });
     };
@@ -120,7 +112,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             if (result.success && result.data !== undefined && result.data.messages !== undefined) {
                 that.PrintMessages(result.data.messages);
                 that.printUsers(result.data.users);
-                that.TotalMessageCount = result.data.messages.length;
+                that.TotalMessageCount = result.data.messages.lenth;
             }
         };
 
@@ -132,8 +124,6 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             error: function() { 
                 alert("failed to read messages from server."); 
             },
-            complete: function () {
-            }
         });
     };
 };
@@ -187,11 +177,6 @@ ChatClient.SendActivity = function(isActive) {
             activity: true,
             active: chatClient.Active,
         },
-        success: function(result) {
-            if (result.success) {
-                chatClient.printUsers(result.data.users);
-            }
-        },
         error: function() { 
             alert("failed to send user activity."); 
         }
@@ -225,7 +210,7 @@ $(document).ready(function() {
     });
 
     $("#message").keypress(function (e) {
-        if (e.keyCode == 13 && !chatClient.IsPostingMessage && $.trim($("#message").val()).length) {
+        if (e.keyCode == 13 && $.trim($("#message").val()).length) {
             chatClient.postMessage();
         }
     });
