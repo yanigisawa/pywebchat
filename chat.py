@@ -7,7 +7,7 @@
 
 import cgi, cgitb; cgitb.enable();
 
-import time, os, json, dateutil.parser
+import time, os, json, dateutil.parser, re
 from datetime import datetime, timedelta
 
 from watchdog.observers import Observer
@@ -39,11 +39,25 @@ class FileChangeHandler(LoggingEventHandler):
         pass
 
 class Message(object):
-    def __init__(self, user = None, message = None, date = None):
+    def __init__(self, user = None, message = None, date = None, filterHTML = True):
+        self.filterHTML = filterHTML
         self.user = user
         self.message = message
         self.date = date
-    
+
+    @staticmethod
+    def replaceUrlsWithLinks(msg):
+        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', msg)
+        newMsg = ""
+        print("msg: {0} - count of urls: {1}".format(msg, len(urls)))
+        if len(urls) > 0:
+            for u in urls:
+                newMsg = msg.replace(u, "<a href=\"{0}\" target=\"_blank\">{0}</a>".format(u))
+        else:
+            newMsg = msg
+
+        return newMsg
+
     @property
     def message(self): 
         return self.m_message
@@ -51,7 +65,11 @@ class Message(object):
     @message.setter
     def message(self, value):
         if value != None: 
-            self.m_message = value.replace("<", "&lt;").replace(">", "&gt;")
+            if self.filterHTML:
+                self.m_message = value.replace("<", "&lt;").replace(">", "&gt;")
+                self.m_message = Message.replaceUrlsWithLinks(self.m_message)
+            else: 
+                self.m_message = value
 
     def __str__(self):
         return "{0} - {1}: {2}".format(self.date, self.user, self.message)
@@ -172,7 +190,7 @@ def readActivityFile():
             for line in f:
                 if line.startswith("Message: "):
                     m = json2obj(line.lstrip("Message: ").strip())
-                    msg = Message(user = m.user, date = m.date, message = m.m_message)
+                    msg = Message(user = m.user, date = m.date, filterHTML = False, message = m.m_message)
                     messages.append(msg)
                     users = setUserActivityDate(users, msg.user, msg.date)
                 elif line.startswith("UserActivity: "):

@@ -95,6 +95,15 @@ class ChatUnitTests(unittest.TestCase):
         msg, users = chat.readActivityFile()
         self.assertEqual(1, len(users))
 
+    def test_LinkInMessage_IsConvertedToHtmlLink(self):
+        m = chat.Message(user = "TestUser", message = "http://www.google.com")
+        chat.storeMessage(m)
+
+        msg, users = chat.readActivityFile()
+        self.assertEqual(1, len(msg))
+        self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\">http://www.google.com</a>",
+            msg[0].message)
+
 
         
 def main():
