@@ -10,22 +10,24 @@ import cgi, cgitb; cgitb.enable();
 import os, json
 from datetime import datetime, timedelta
 from collections import namedtuple
-from chatModels import ChatApiResponse, ApiResult, MessageEncoder
-from chatModels import Message, FileChangeHandler, UserActivity
+from chatModels import ChatApiResponse, ApiResult, MessageEncoder, Message, FileChangeHandler
+from chatModels import UserActivity, ChatLineType, ChatLogLine, _newMsg, _observer, fileName
 
 today = datetime.utcnow()
-fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 
 def storeMessage(msg):
+    line = ChatLogLine(obj = msg)
     with open(fileName, 'a') as f:
-        f.write("Message: {0}\n".format(json.dumps(msg, cls=MessageEncoder)))
+        s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
+        f.write(s)
 
 def logUserActivity(userActivity):
+    line = ChatLogLine(logType = ChatLineType.UserActivity, obj = userActivity)
     with open(fileName, 'a') as f:
-        s = "UserActivity: {0}\n".format(json.dumps(userActivity, cls=MessageEncoder))
+        s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
         f.write(s)
 
 def getModifiedUsersArray(users, u):
@@ -67,14 +69,14 @@ def readActivityFile():
     if os.path.isfile(fileName): 
         with open(fileName, 'r') as f:
             for line in f:
-                if line.startswith("Message: "):
-                    m = json2obj(line.lstrip("Message: ").strip())
-                    msg = Message(user = m.user, date = m.date, filterHTML = False, message = m.m_message)
+                lineObj = json2obj(line)
+                if lineObj.logType == ChatLineType.Message:
+                    m = lineObj.obj
+                    msg = Message(user = m.user, date = m.date, filterHTML = False, message = m.message)
                     messages.append(msg)
                     users = setUserActivityDate(users, msg.user, msg.date)
-                elif line.startswith("UserActivity: "):
-                    u = json2obj(line.lstrip("UserActivity: ").strip())
-                    users = getModifiedUsersArray(users, u)
+                elif lineObj.logType == ChatLineType.UserActivity:
+                    users = getModifiedUsersArray(users, lineObj.obj)
 
     users = removeInactiveUsers(users)
 
@@ -91,7 +93,6 @@ def printMessages():
     result.data = chatResponse
 
     print(json.dumps(result, cls=MessageEncoder))
-
 
 def waitForNewMessages():
     event_handler = FileChangeHandler()

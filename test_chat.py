@@ -103,8 +103,6 @@ class ChatUnitTests(unittest.TestCase):
         self.assertEqual(1, len(msg))
         self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\">http://www.google.com</a>",
             msg[0].message)
-
-
         
 def main():
     unittest.main()

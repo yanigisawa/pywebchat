@@ -50,7 +50,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             if (i >= this.TotalMessageCount) {
                 messages.push("<span class='metaData'>", messageArr[i].user, " - ");
                 messages.push(formatTime(messageArr[i].date), "</span><span class='message'>");
-                messages.push(": ", messageArr[i].m_message, "</span><br/>");
+                messages.push(": ", messageArr[i].message, "</span><br/>");
             }
         }
         _messageLog.append(messages.join(""));
