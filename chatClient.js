@@ -106,7 +106,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         });
     };
 
-    this.readMessages = function () {
+    this.readMessages = function (callBack) {
         var that = this;
         var success = function(result) {
             if (result.success && result.data !== undefined && result.data.messages !== undefined) {
@@ -124,6 +124,9 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             error: function() { 
                 alert("failed to read messages from server."); 
             },
+            complete: function () {
+                if (callBack !== undefined) { callBack(); }
+            }
         });
     };
 };
@@ -209,6 +212,12 @@ $(document).ready(function() {
         }
     });
 
+    $("#refresh").click(function () {
+        chatClient.TotalMessageCount = 0;
+        $("#messageLog").html("");
+        chatClient.readMessages();
+    });
+
     $("#message").keypress(function (e) {
         if (e.keyCode == 13 && $.trim($("#message").val()).length) {
             chatClient.postMessage();
@@ -220,8 +229,7 @@ $(document).ready(function() {
         document.title = "Web Chat";
     } );
 
-    chatClient.readMessages();
-    ChatClient.poll();
+    chatClient.readMessages(ChatClient.poll);
 });
 
 

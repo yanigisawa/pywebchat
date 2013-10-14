@@ -16,15 +16,18 @@ fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.
 class FileChangeHandler(LoggingEventHandler):
     def on_created(self, event):
         pass
-    def on_deleted(self,event):
+    def on_deleted(self, event):
         pass
 
     def on_any_event(self, event):
         currentDirectory = os.getcwd()
         f = os.path.join(currentDirectory, fileName)
         if os.path.realpath(event.src_path) == f:
-            _newMsg.set()
-            _observer.stop()
+            try:
+                _newMsg.set()
+                _observer.stop()
+            except:
+                pass
 
     def on_modified(self, event):
         pass
