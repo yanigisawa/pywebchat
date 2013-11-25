@@ -25,7 +25,7 @@ class FileChangeHandler(LoggingEventHandler):
         if os.path.realpath(event.src_path) == f:
             try:
                 _newMsg.set()
-                _observer.stop()
+                #_observer.stop()
             except:
                 pass
 

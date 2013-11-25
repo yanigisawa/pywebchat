@@ -5,15 +5,23 @@
 ## Actor 1 in module1.py
 ##
 
-import cgi, cgitb; cgitb.enable();
+#import cgi, cgitb; cgitb.enable();
+
+import paste
+from bottle import run, template, static_file, request, post, get, put
 
 import os, json
 from datetime import datetime, timedelta
 from collections import namedtuple
-from chatModels import ChatApiResponse, ApiResult, MessageEncoder, Message, FileChangeHandler
-from chatModels import UserActivity, ChatLineType, ChatLogLine, _newMsg, _observer, fileName
+from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message, FileChangeHandler,
+    UserActivity, ChatLineType, ChatLogLine, _newMsg, _observer, fileName)
+from sched import scheduler
+from time import time, sleep
 
-today = datetime.utcnow()
+
+_today = datetime.utcnow()
+_secondsToWait = 55 #seconds to pause the thread waiting for updates
+_observerIsStarted = False
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
@@ -45,8 +53,8 @@ def getModifiedUsersArray(users, u):
     return users
 
 def removeInactiveUsers(users):
-    today = datetime.utcnow()
-    twoMinutesAgo = today + timedelta(minutes = -2)
+    _today = datetime.utcnow()
+    twoMinutesAgo = _today + timedelta(minutes = -2)
 
     for user in users:
         if (user.date != None and user.date <= twoMinutesAgo):
@@ -82,51 +90,81 @@ def readActivityFile():
 
     return (messages, users)
 
-def printMessages():
-    print("Content-type: application/json")
-    print(os.linesep)
-
+def getMessages():
     result = ApiResult()
     result.success = True
     messages, users = readActivityFile()
     chatResponse = ChatApiResponse(messages = messages, users = users)
     result.data = chatResponse
 
-    print(json.dumps(result, cls=MessageEncoder))
+    return json.dumps(result, cls=MessageEncoder)
 
 def waitForNewMessages():
     event_handler = FileChangeHandler()
     path = os.getcwd()
     path = os.path.join(path, "chat")
     _observer.schedule(event_handler, path, recursive=False)
-    _observer.start()
-    _newMsg.wait(55)
+    global _observerIsStarted
+    if not _observerIsStarted: 
+        _observer.start()
+        _observerIsStarted = True
 
-def main():
-    form = cgi.FieldStorage()
-    messageSubmitted = form.getvalue("message", "")
-    poll = form.getvalue("poll", "")
-    name = form.getvalue("name", "")
-    active = form.getvalue("active", "")
-    activity = form.getvalue("activity", "")
+@get('/')
+def index():
+    return static_file("index.html", ".")
+
+@get('/js')
+def javaScript():
+    return static_file("chatClient.js", ".")
+
+@get('/hotkeyjs')
+def hotKeys():
+    return static_file("jquery.hotkeys.js", ".")
+
+@get('/img/:imageName')
+def serveImages(imageName):
+    return static_file(imageName, "./img")
+
+@put('/newmessage')
+def newMessage():
+    messageSubmitted = request.POST.get("message", "").strip()
+    name = request.POST.get("name", "").strip()
 
     if messageSubmitted:
         msg = Message()
         msg.user = name
-        msg.message = form.getvalue("message", "")
-        msg.date = today
+        msg.message = messageSubmitted
+        msg.date = _today
         storeMessage(msg)
 
-    if activity and len(name.strip()) > 0:
+    return getMessages()
+
+@put('/useractivity')
+def userActivity():
+    active = request.POST.get("active", "").strip()
+    activity = request.POST.get("activity", "").strip()
+    name = request.POST.get("name", "").strip()
+    if activity and len(name) > 0:
         u = UserActivity(name = name, active = active, date = datetime.utcnow())
         logUserActivity(u)
 
-    if poll:
+    return getMessages()
+
+@post('/poll')
+def poll():
+    if not _observerIsStarted:
         waitForNewMessages()
 
-    printMessages()
+    _newMsg.clear()
+    _newMsg.wait(_secondsToWait)
 
-if __name__ == "__main__":
-    main()
+    return getMessages()
+
+@post('/readmessages')
+def readMessages():
+    return getMessages()
+
     
+#debug(True)
+run(server='paste', reloader=True)
 

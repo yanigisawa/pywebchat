@@ -89,8 +89,8 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         _messageField.addClass("posting");
 
         $.ajax({
-            type: "POST",
-            url: "chat.py",
+            type: "PUT",
+            url: "newmessage",
             dataType: "json",
             data: { 
                 name: _userNameField.val(), 
@@ -117,8 +117,8 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         };
 
         $.ajax({
-            type: "GET",
-            url: "chat.py",
+            type: "POST",
+            url: "readmessages",
             dataType: "json",
             success: success,
             error: function() { 
@@ -135,7 +135,7 @@ var chatClient = new ChatClient($("#messageLog"), $("#userName"), $("#message"),
 
 ChatClient.poll = function (){
     $.ajax({ 
-        url: "chat.py", 
+        url: "poll", 
         type: "POST",
         data: {
             poll: true,
@@ -172,8 +172,8 @@ ChatClient.SendActivity = function(isActive) {
     chatClient.Active = isActive;
 
     $.ajax({
-        type: "POST",
-        url: "chat.py",
+        type: "PUT",
+        url: "useractivity",
         dataType: "json",
         data: { 
             name: $("#userName").val(), 
