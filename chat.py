@@ -19,7 +19,6 @@ from sched import scheduler
 from time import time, sleep
 
 
-_today = datetime.utcnow()
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
 _observerIsStarted = False
 
@@ -53,8 +52,8 @@ def getModifiedUsersArray(users, u):
     return users
 
 def removeInactiveUsers(users):
-    _today = datetime.utcnow()
-    twoMinutesAgo = _today + timedelta(minutes = -2)
+    today = datetime.utcnow()
+    twoMinutesAgo = today + timedelta(minutes = -2)
 
     for user in users:
         if (user.date != None and user.date <= twoMinutesAgo):
@@ -134,7 +133,7 @@ def newMessage():
         msg = Message()
         msg.user = name
         msg.message = messageSubmitted
-        msg.date = _today
+        msg.date = datetime.utcnow()
         storeMessage(msg)
 
     return getMessages()
