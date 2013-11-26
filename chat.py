@@ -98,6 +98,10 @@ def getMessages():
 
     return json.dumps(result, cls=MessageEncoder)
 
+def getJsonSuccessResponse():
+    result = ApiResult(success = True)
+    return json.dumps(result, cls = MessageEncoder)
+
 def waitForNewMessages():
     event_handler = FileChangeHandler()
     path = os.getcwd()
@@ -136,7 +140,7 @@ def newMessage():
         msg.date = datetime.utcnow()
         storeMessage(msg)
 
-    return getMessages()
+    return getJsonSuccessResponse()
 
 @put('/useractivity')
 def userActivity():
@@ -147,7 +151,7 @@ def userActivity():
         u = UserActivity(name = name, active = active, date = datetime.utcnow())
         logUserActivity(u)
 
-    return getMessages()
+    return getJsonSuccessResponse()
 
 @post('/poll')
 def poll():

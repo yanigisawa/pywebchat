@@ -47,13 +47,11 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         var messageCount = messageArr.length;
         var messages = [];
         for(var i = 0; i < messageCount; i++) {
-            if (i >= this.TotalMessageCount) {
-                messages.push("<span class='metaData'>", messageArr[i].user, " - ");
-                messages.push(formatTime(messageArr[i].date), "</span><span class='message'>");
-                messages.push(": ", messageArr[i].message, "</span><br/>");
-            }
+            messages.push("<span class='metaData'>", messageArr[i].user, " - ");
+            messages.push(formatTime(messageArr[i].date), "</span><span class='message'>");
+            messages.push(": ", messageArr[i].message, "</span><br/>");
         }
-        _messageLog.append(messages.join(""));
+        _messageLog.html(messages.join(""));
         this.scrollToBottom();
     };
 
@@ -215,6 +213,7 @@ $(document).ready(function() {
     $("#refresh").click(function () {
         chatClient.TotalMessageCount = 0;
         $("#messageLog").html("");
+        $("#users").html("");
         chatClient.readMessages();
     });
 
