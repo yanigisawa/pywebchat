@@ -20,22 +20,37 @@ from time import time, sleep
 
 
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
+_messages, _users = [], []
 _observerIsStarted = False
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 
 def storeMessage(msg):
-    line = ChatLogLine(obj = msg)
-    with open(fileName, 'a') as f:
-        s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
-        f.write(s)
+    global _messages
+    _messages.append(msg)
+    _newMsg.set()
+    #line = ChatLogLine(obj = msg)
+    #with open(fileName, 'a') as f:
+    #    s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
+    #    f.write(s)
 
 def logUserActivity(userActivity):
-    line = ChatLogLine(logType = ChatLineType.UserActivity, obj = userActivity)
-    with open(fileName, 'a') as f:
-        s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
-        f.write(s)
+    global _users
+    if userActivity in _users:
+        for user in _users:
+            if userActivity == user:
+                user.active = userActivity.active
+                user.date = userActivity.date
+                break
+    else:
+        _users.append(userActivity)
+    _newMsg.set()
+
+    #line = ChatLogLine(logType = ChatLineType.UserActivity, obj = userActivity)
+    #with open(fileName, 'a') as f:
+    #    s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
+    #    f.write(s)
 
 def getModifiedUsersArray(users, u):
     userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date)
@@ -92,8 +107,10 @@ def readActivityFile():
 def getMessages():
     result = ApiResult()
     result.success = True
-    messages, users = readActivityFile()
-    chatResponse = ChatApiResponse(messages = messages, users = users)
+    #messages, users = readActivityFile()
+    global _users
+    _users = removeInactiveUsers(_users)
+    chatResponse = ChatApiResponse(messages = _messages, users = _users)
     result.data = chatResponse
 
     return json.dumps(result, cls=MessageEncoder)
