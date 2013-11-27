@@ -29,11 +29,9 @@ def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 def storeMessage(msg):
     global _messages
     _messages.append(msg)
+    ua = UserActivity(name = msg.user, active = True, date = msg.date)
+    logUserActivity(ua)
     _newMsg.set()
-    #line = ChatLogLine(obj = msg)
-    #with open(fileName, 'a') as f:
-    #    s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
-    #    f.write(s)
 
 def logUserActivity(userActivity):
     global _users
@@ -84,30 +82,9 @@ def setUserActivityDate(userArray, userName, date):
 
     return userArray
 
-def readActivityFile():
-    messages = []
-    users = []
-
-    if os.path.isfile(fileName): 
-        with open(fileName, 'r') as f:
-            for line in f:
-                lineObj = json2obj(line)
-                if lineObj.logType == ChatLineType.Message:
-                    m = lineObj.obj
-                    msg = Message(user = m.user, date = m.date, filterHTML = False, message = m.message)
-                    messages.append(msg)
-                    users = setUserActivityDate(users, msg.user, msg.date)
-                elif lineObj.logType == ChatLineType.UserActivity:
-                    users = getModifiedUsersArray(users, lineObj.obj)
-
-    users = removeInactiveUsers(users)
-
-    return (messages, users)
-
 def getMessages():
     result = ApiResult()
     result.success = True
-    #messages, users = readActivityFile()
     global _users
     _users = removeInactiveUsers(_users)
     chatResponse = ChatApiResponse(messages = _messages, users = _users)
@@ -184,7 +161,7 @@ def poll():
 def readMessages():
     return getMessages()
 
-#debug(True)
-#run(server='paste', reloader=True)
-run(server='paste', host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+if __name__ == "__main__":
+    #run(server='paste', reloader=True)
+    run(server='paste', host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 

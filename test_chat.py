@@ -1,17 +1,22 @@
 import unittest
+import json
 import chat
 from datetime import datetime, timedelta
+from collections import namedtuple
+
+def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
+def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
+
+def getMessagesAndUsersFromJson(json):
+    response = json2obj(json)
+    return response.data.messages, response.data.users
 
 class ChatUnitTests(unittest.TestCase):
 
-    def setUp(self):
-        today = datetime.utcnow()
-        chat.fileName = "unitTestFile_{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
-
     def tearDown(self):
-        import os
-        if os.path.isfile(chat.fileName):
-            os.remove(chat.fileName)
+        chat._messages = []
+        chat._users = []
+
 
     def test_MessageObject_DoesNotReturnHTMLInMessagePropertyWhenConstructedWithHTML(self):
         msg = chat.Message(message = "<html>")
@@ -25,13 +30,13 @@ class ChatUnitTests(unittest.TestCase):
     def test_UserStatusIsTrue_WhenTrueActivityLogged(self):
         u = chat.UserActivity(name = "TestUser", active = "true") 
         chat.logUserActivity(u)
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(users[0].active, True)
 
     def test_UserStatusIsFalse_WhenFalseActivityLogged(self):
         u = chat.UserActivity(name = "TestUser", active = "false") 
         chat.logUserActivity(u)
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(users[0].active, False)
 
     def test_UserStatusIsFalse_WhenTrueThenFalseActivityLogged(self):
@@ -39,7 +44,7 @@ class ChatUnitTests(unittest.TestCase):
         chat.logUserActivity(u)
         u = chat.UserActivity(name = "TestUser", active = "false") 
         chat.logUserActivity(u)
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(users[0].active, False)
 
     def test_UserStatusIsTrue_WhenFalseThenTruePythonBooleanActivityRead(self):
@@ -47,7 +52,7 @@ class ChatUnitTests(unittest.TestCase):
         chat.logUserActivity(u)
         u = chat.UserActivity(name = "TestUser", active = True) 
         chat.logUserActivity(u)
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(users[0].active, True)
 
     def test_UserIsLoggedOut_AfterTwoMinutesWithoutPolling(self):
@@ -59,14 +64,14 @@ class ChatUnitTests(unittest.TestCase):
         twoMinuteAgoDelta = timedelta(minutes = -2)
         u = chat.UserActivity(name = "TestUser", active = False, date = today + twoMinuteAgoDelta)
         chat.logUserActivity(u)
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(0, len(users))
 
     def test_MessageObject_CanBeSerializedAndDeSerialized(self):
         m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "unit test message")
         chat.storeMessage(m)
-        msgs, users = chat.readActivityFile()
-        self.assertEqual(1, len(msgs))
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
+        self.assertEqual(1, len(msg))
 
     def test_UserIsLoggedIn_WhileTheyAreStillActiveOrPolling(self):
         today = datetime.utcnow()
@@ -74,13 +79,13 @@ class ChatUnitTests(unittest.TestCase):
         u = chat.UserActivity(name = "TestUser", active = False, date = today + threeMinuteAgoDelta)
         chat.logUserActivity(u)
 
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(0, len(users))
 
         u.date = today
         chat.logUserActivity(u)
 
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(1, len(users))
 
     def test_UserIsLoggedIn_WhileTheyAreTyping(self):
@@ -92,14 +97,14 @@ class ChatUnitTests(unittest.TestCase):
         m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "test message")
         chat.storeMessage(m)
 
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(1, len(users))
 
     def test_LinkInMessage_IsConvertedToHtmlLink(self):
         m = chat.Message(user = "TestUser", message = "http://www.google.com")
         chat.storeMessage(m)
 
-        msg, users = chat.readActivityFile()
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(1, len(msg))
         self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\">http://www.google.com</a>",
             msg[0].message)
