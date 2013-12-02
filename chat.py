@@ -149,8 +149,8 @@ def userActivity():
 
 @post('/poll')
 def poll():
-    if not _observerIsStarted:
-        waitForNewMessages()
+    #if not _observerIsStarted:
+    #    waitForNewMessages()
 
     _newMsg.clear()
     _newMsg.wait(_secondsToWait)
