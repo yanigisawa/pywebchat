@@ -45,7 +45,7 @@ class Message(object):
         newMsg = ""
         if len(urls) > 0:
             for u in urls:
-                newMsg = msg.replace(u, "<a href=\"{0}\" target=\"_blank\">{0}</a>".format(u))
+                newMsg = msg.replace(u, "<a href=\"{0}\" target=\"_blank\" tabindex=\"-1\">{0}</a>".format(u))
         else:
             newMsg = msg
 

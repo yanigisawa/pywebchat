@@ -106,7 +106,7 @@ class ChatUnitTests(unittest.TestCase):
 
         msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(1, len(msg))
-        self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\">http://www.google.com</a>",
+        self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\" tabindex=\"-1\">http://www.google.com</a>",
             msg[0].message)
         
 def main():
