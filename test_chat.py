@@ -1,8 +1,12 @@
 import unittest
 import json
 import chat
+import os
 from datetime import datetime, timedelta
 from collections import namedtuple
+from ZODB.FileStorage import FileStorage
+from ZODB.DB import DB
+import transaction
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
@@ -13,10 +17,15 @@ def getMessagesAndUsersFromJson(json):
 
 class ChatUnitTests(unittest.TestCase):
 
-    def tearDown(self):
-        chat._messages = []
-        chat._users = []
+    def setUp(self):
+        chat.open_db()
 
+    def tearDown(self):
+        chat.close_db()
+        os.remove('db/webChat.fs')
+        os.remove('db/webChat.fs.index')
+        os.remove('db/webChat.fs.lock')
+        os.remove('db/webChat.fs.tmp')
 
     def test_MessageObject_DoesNotReturnHTMLInMessagePropertyWhenConstructedWithHTML(self):
         msg = chat.Message(message = "<html>")

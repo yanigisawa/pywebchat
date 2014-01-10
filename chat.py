@@ -1,54 +1,54 @@
-#!/usr/bin/python
-
-# Long Polling Example:
-# http://techoctave.com/c7/posts/60-simple-long-polling-example-with-javascript-and-jquery
-## Actor 1 in module1.py
-##
-
-#import cgi, cgitb; cgitb.enable();
+#!/usr/bin/env python
 
 import paste
-from bottle import run, template, static_file, request, post, get, put
+from bottle import run, template, static_file, request, post, get, put, hook
 
 import os, json
 from datetime import datetime, timedelta
 from collections import namedtuple
-from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message, FileChangeHandler,
-    UserActivity, ChatLineType, ChatLogLine, _newMsg, _observer, fileName)
+from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
+    UserActivity, ChatLineType, ChatLogLine, _newMsg)
 from sched import scheduler
 from time import time, sleep
-
+from ZODB.FileStorage import FileStorage
+from ZODB.DB import DB
+import transaction
 
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
-_messages, _users = [], []
 _observerIsStarted = False
+_zdb = {}
+_todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
+_usersKey = "users"
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 
 def storeMessage(msg):
-    global _messages
-    _messages.append(msg)
+    db = _zdb['root']
+    if not db.has_key(_todaysKey):
+        db[_todaysKey] = []
+    db[_todaysKey].append(msg)
     ua = UserActivity(name = msg.user, active = True, date = msg.date)
     logUserActivity(ua)
+    transaction.commit()
     _newMsg.set()
 
 def logUserActivity(userActivity):
-    global _users
-    if userActivity in _users:
-        for user in _users:
+    db = _zdb['root']
+    if not db.has_key(_usersKey):
+        db[_usersKey] = []
+    users = db[_usersKey]
+    if userActivity in users:
+        for user in users:
             if userActivity == user:
                 user.active = userActivity.active
                 user.date = userActivity.date
                 break
     else:
-        _users.append(userActivity)
+        users.append(userActivity)
+    db[_usersKey] = users
+    transaction.commit()
     _newMsg.set()
-
-    #line = ChatLogLine(logType = ChatLineType.UserActivity, obj = userActivity)
-    #with open(fileName, 'a') as f:
-    #    s = "{0}\n".format(json.dumps(line, cls=MessageEncoder))
-    #    f.write(s)
 
 def getModifiedUsersArray(users, u):
     userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date)
@@ -85,9 +85,17 @@ def setUserActivityDate(userArray, userName, date):
 def getMessages():
     result = ApiResult()
     result.success = True
-    global _users
-    _users = removeInactiveUsers(_users)
-    chatResponse = ChatApiResponse(messages = _messages, users = _users)
+    db = _zdb['root']
+    if not db.has_key(_todaysKey):
+        db[_todaysKey] = []
+
+    messages = db[_todaysKey]
+
+    if not db.has_key(_usersKey):
+        db[_usersKey] = []
+
+    users = removeInactiveUsers(db[_usersKey])
+    chatResponse = ChatApiResponse(messages = messages, users = users)
     result.data = chatResponse
 
     return json.dumps(result, cls=MessageEncoder)
@@ -95,16 +103,6 @@ def getMessages():
 def getJsonSuccessResponse():
     result = ApiResult(success = True)
     return json.dumps(result, cls = MessageEncoder)
-
-def waitForNewMessages():
-    event_handler = FileChangeHandler()
-    path = os.getcwd()
-    path = os.path.join(path, "chat")
-    _observer.schedule(event_handler, path, recursive=False)
-    global _observerIsStarted
-    if not _observerIsStarted: 
-        _observer.start()
-        _observerIsStarted = True
 
 @get('/')
 def index():
@@ -124,6 +122,7 @@ def serveImages(imageName):
 
 @put('/newmessage')
 def newMessage():
+    open_db()
     messageSubmitted = request.POST.get("message", "").strip()
     name = request.POST.get("name", "").strip()
 
@@ -138,6 +137,7 @@ def newMessage():
 
 @put('/useractivity')
 def userActivity():
+    open_db()
     active = request.POST.get("active", "").strip()
     activity = request.POST.get("activity", "").strip()
     name = request.POST.get("name", "").strip()
@@ -149,19 +149,38 @@ def userActivity():
 
 @post('/poll')
 def poll():
-    #if not _observerIsStarted:
-    #    waitForNewMessages()
 
     _newMsg.clear()
     _newMsg.wait(_secondsToWait)
+
+    #open_db()
 
     return getMessages()
 
 @post('/readmessages')
 def readMessages():
+    open_db()
     return getMessages()
 
+def open_db():
+    global _zdb
+    _zdb['storage'] = FileStorage("db/webChat.fs")
+    _zdb['db'] = DB(_zdb['storage'])
+    _zdb['connection'] = _zdb['db'].open()
+    _zdb['root'] = _zdb['connection'].root()
+
+@hook('after_request')
+def close_db():
+
+    print("after request")
+    global _zdb
+    if not _zdb.has_key('connection'):
+        return
+    transaction.commit()
+    _zdb['connection'].close()
+    _zdb['db'].close()
+    _zdb['storage'].close()
+
 if __name__ == "__main__":
-    #run(server='paste', reloader=True)
-    run(server='paste', host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    run(server='paste', reloader=True)
 

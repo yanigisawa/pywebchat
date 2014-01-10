@@ -2,35 +2,9 @@
 
 import os, json, dateutil.parser, re
 from datetime import datetime, timedelta
-
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
 from threading import Event
 
 _newMsg = Event()
-_observer = Observer()
-
-today = datetime.utcnow()
-fileName = "chat/{0}-{1:02d}-{2:02d}.txt".format(today.year, today.month, today.day)
-
-class FileChangeHandler(LoggingEventHandler):
-    def on_created(self, event):
-        pass
-    def on_deleted(self, event):
-        pass
-
-    def on_any_event(self, event):
-        currentDirectory = os.getcwd()
-        f = os.path.join(currentDirectory, fileName)
-        if os.path.realpath(event.src_path) == f:
-            try:
-                _newMsg.set()
-                #_observer.stop()
-            except:
-                pass
-
-    def on_modified(self, event):
-        pass
 
 class Message(object):
     def __init__(self, user = None, message = None, date = None, filterHTML = True):

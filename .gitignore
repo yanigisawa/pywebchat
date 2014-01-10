@@ -1,3 +1,7 @@
 *.pyc
 .DS_Store
 *.swp
+db/webChat.fs
+db/webChat.fs.index
+db/webChat.fs.lock
+db/webChat.fs.tmp
