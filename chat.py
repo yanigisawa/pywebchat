@@ -15,7 +15,6 @@ from ZODB.DB import DB
 import transaction
 
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
-_observerIsStarted = False
 _zdb = {}
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
 _usersKey = "users"
@@ -83,6 +82,7 @@ def setUserActivityDate(userArray, userName, date):
     return userArray
 
 def getMessages():
+    open_db()
     result = ApiResult()
     result.success = True
     db = _zdb['root']
@@ -98,7 +98,10 @@ def getMessages():
     chatResponse = ChatApiResponse(messages = messages, users = users)
     result.data = chatResponse
 
-    return json.dumps(result, cls=MessageEncoder)
+    jsonStr = json.dumps(result, cls=MessageEncoder)
+    close_db()
+
+    return jsonStr
 
 def getJsonSuccessResponse():
     result = ApiResult(success = True)
@@ -133,6 +136,8 @@ def newMessage():
         msg.date = datetime.utcnow()
         storeMessage(msg)
 
+    close_db()
+
     return getJsonSuccessResponse()
 
 @put('/useractivity')
@@ -145,6 +150,8 @@ def userActivity():
         u = UserActivity(name = name, active = active, date = datetime.utcnow())
         logUserActivity(u)
 
+    close_db()
+
     return getJsonSuccessResponse()
 
 @post('/poll')
@@ -153,13 +160,10 @@ def poll():
     _newMsg.clear()
     _newMsg.wait(_secondsToWait)
 
-    #open_db()
-
     return getMessages()
 
 @post('/readmessages')
 def readMessages():
-    open_db()
     return getMessages()
 
 def open_db():
@@ -168,15 +172,19 @@ def open_db():
     _zdb['db'] = DB(_zdb['storage'])
     _zdb['connection'] = _zdb['db'].open()
     _zdb['root'] = _zdb['connection'].root()
+    transaction.begin()
 
-@hook('after_request')
 def close_db():
 
-    print("after request")
     global _zdb
     if not _zdb.has_key('connection'):
         return
-    transaction.commit()
+
+    if transaction.isDoomed():
+        transaction.abort()
+    else:
+        transaction.commit()
+
     _zdb['connection'].close()
     _zdb['db'].close()
     _zdb['storage'].close()
