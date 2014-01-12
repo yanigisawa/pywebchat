@@ -42,3 +42,18 @@ def deleteTodaysMessages():
     messages = ""
     if not key is None:
         key.delete()
+
+def getDayKeyListFromS3():
+    bucket = _conn.get_bucket(_bucketName)
+    keyList = bucket.list()
+    return [k.key for k in keyList]
+
+def getMessagesForKey(s3KeyStr):
+    bucket = _conn.get_bucket(_bucketName)
+    key = bucket.get_key(s3KeyStr)
+    messages = ""
+    if not key is None:
+        messages = key.get_contents_as_string()
+
+    return messages
+

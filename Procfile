@@ -1,1 +1,1 @@
-web: python chat.py
+web: python heroku.py

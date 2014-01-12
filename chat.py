@@ -10,7 +10,7 @@ from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
     UserActivity, ChatLineType, ChatLogLine)
 from sched import scheduler
 from time import time, sleep
-from chat_s3 import getTodaysWebChatMessages, storeMessages, deleteTodaysMessages
+from chat_s3 import getTodaysWebChatMessages, storeMessages, deleteTodaysMessages, getDayKeyListFromS3, getMessagesForKey
 from threading import Event
 
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
@@ -166,7 +166,21 @@ def clear():
     _messages = []
     return "Todays messages deleted"
 
+@get('/history')
+def history():
+    keyList = getDayKeyListFromS3()
+    listStr = ""
+    for k in keyList:
+        listStr += "<a href='/history/{0}'>{0}</a><br/>".format(k)
+
+    return listStr
+
+@get('/history/:s3Key')
+def historyForKey(s3Key):
+    messageList = getMessagesForKey(s3Key)
+    return json.dumps(getMessageArrayFromJson(messageList), cls=MessageEncoder)
+
+
 if __name__ == "__main__":
-    #run(server='paste', reloader=True, port=5000)
-    run(server='paste', host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    run(server='paste', reloader=True, port=5000)
 
