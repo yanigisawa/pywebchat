@@ -167,5 +167,6 @@ def clear():
     return "Todays messages deleted"
 
 if __name__ == "__main__":
-    run(server='paste', reloader=True, port=5000)
+    #run(server='paste', reloader=True, port=5000)
+    run(server='paste', host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
