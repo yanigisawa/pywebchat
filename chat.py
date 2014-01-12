@@ -7,46 +7,37 @@ import os, json
 from datetime import datetime, timedelta
 from collections import namedtuple
 from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
-    UserActivity, ChatLineType, ChatLogLine, _newMsg)
+    UserActivity, ChatLineType, ChatLogLine)
 from sched import scheduler
 from time import time, sleep
-from ZODB.FileStorage import FileStorage
-from ZODB.DB import DB
-import transaction
+from chat_s3 import getTodaysWebChatMessages, storeMessages, deleteTodaysMessages
+from threading import Event
 
 _secondsToWait = 55 #seconds to pause the thread waiting for updates
-_zdb = {}
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-_usersKey = "users"
+_messages, _users = [], []
+_newMsg = Event()
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 
 def storeMessage(msg):
-    db = _zdb['root']
-    if not db.has_key(_todaysKey):
-        db[_todaysKey] = []
-    db[_todaysKey].append(msg)
+    _messages.append(msg)
     ua = UserActivity(name = msg.user, active = True, date = msg.date)
     logUserActivity(ua)
-    transaction.commit()
+    storeMessages(json.dumps(_messages, cls = MessageEncoder))
     _newMsg.set()
 
 def logUserActivity(userActivity):
-    db = _zdb['root']
-    if not db.has_key(_usersKey):
-        db[_usersKey] = []
-    users = db[_usersKey]
-    if userActivity in users:
-        for user in users:
+    global _users
+    if userActivity in _users:
+        for user in _users:
             if userActivity == user:
                 user.active = userActivity.active
                 user.date = userActivity.date
                 break
     else:
-        users.append(userActivity)
-    db[_usersKey] = users
-    transaction.commit()
+        _users.append(userActivity)
     _newMsg.set()
 
 def getModifiedUsersArray(users, u):
@@ -81,25 +72,34 @@ def setUserActivityDate(userArray, userName, date):
 
     return userArray
 
+def getMessageArrayFromJson(jsonString):
+    dictArray = json2obj(jsonString)
+    arr = []
+    for item in dictArray:
+        m = Message(
+            user = item.user
+            , date = item.date
+            , message = item.message
+            , filterHTML = False)
+        arr.append(m)
+
+    return arr
+
 def getMessages():
-    open_db()
     result = ApiResult()
     result.success = True
-    db = _zdb['root']
-    if not db.has_key(_todaysKey):
-        db[_todaysKey] = []
 
-    messages = db[_todaysKey]
+    global _messages
+    if len(_messages) == 0:
+        messageString = getTodaysWebChatMessages()
+        if messageString.strip() != "":
+            _messages = getMessageArrayFromJson(messageString)
 
-    if not db.has_key(_usersKey):
-        db[_usersKey] = []
-
-    users = removeInactiveUsers(db[_usersKey])
-    chatResponse = ChatApiResponse(messages = messages, users = users)
+    users = removeInactiveUsers(_users)
+    chatResponse = ChatApiResponse(messages = _messages, users = _users)
     result.data = chatResponse
 
     jsonStr = json.dumps(result, cls=MessageEncoder)
-    close_db()
 
     return jsonStr
 
@@ -125,7 +125,6 @@ def serveImages(imageName):
 
 @put('/newmessage')
 def newMessage():
-    open_db()
     messageSubmitted = request.POST.get("message", "").strip()
     name = request.POST.get("name", "").strip()
 
@@ -136,21 +135,16 @@ def newMessage():
         msg.date = datetime.utcnow()
         storeMessage(msg)
 
-    close_db()
-
     return getJsonSuccessResponse()
 
 @put('/useractivity')
 def userActivity():
-    open_db()
     active = request.POST.get("active", "").strip()
     activity = request.POST.get("activity", "").strip()
     name = request.POST.get("name", "").strip()
     if activity and len(name) > 0:
         u = UserActivity(name = name, active = active, date = datetime.utcnow())
         logUserActivity(u)
-
-    close_db()
 
     return getJsonSuccessResponse()
 
@@ -166,29 +160,12 @@ def poll():
 def readMessages():
     return getMessages()
 
-def open_db():
-    global _zdb
-    _zdb['storage'] = FileStorage("db/webChat.fs")
-    _zdb['db'] = DB(_zdb['storage'])
-    _zdb['connection'] = _zdb['db'].open()
-    _zdb['root'] = _zdb['connection'].root()
-    transaction.begin()
-
-def close_db():
-
-    global _zdb
-    if not _zdb.has_key('connection'):
-        return
-
-    if transaction.isDoomed():
-        transaction.abort()
-    else:
-        transaction.commit()
-
-    _zdb['connection'].close()
-    _zdb['db'].close()
-    _zdb['storage'].close()
+@get('/clear')
+def clear():
+    deleteTodaysMessages()
+    _messages = []
+    return "Todays messages deleted"
 
 if __name__ == "__main__":
-    run(server='paste', reloader=True)
+    run(server='paste', reloader=True, port=5000)
 

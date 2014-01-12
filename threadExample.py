@@ -44,5 +44,23 @@ def main():
     thread1().start()
     thread2().start()
 
+def myfunc(arg1, arg2):
+    print 'In thread'
+    print 'args are', arg1, arg2
+
+def myfunc2(arg1):
+    print 'In thread'
+    print 'args are', arg1
+
+def main2():
+    #thread = Thread(target=myfunc, args=("foo", "bar"))
+    thread = Thread(target=myfunc2, args=("foo",))
+    #thread = Thread(target=blarg, args=("args"))
+    thread.start()
+
+def blarg(arg):
+    print("my arg: {0}".format(arg))
+
+
 if __name__ == "__main__":
-    main()
+    main2()

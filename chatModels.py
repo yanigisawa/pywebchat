@@ -2,9 +2,6 @@
 
 import os, json, dateutil.parser, re
 from datetime import datetime, timedelta
-from threading import Event
-
-_newMsg = Event()
 
 class Message(object):
     def __init__(self, user = None, message = None, date = None, filterHTML = True):
