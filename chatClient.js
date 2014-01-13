@@ -110,7 +110,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             if (result.success && result.data !== undefined && result.data.messages !== undefined) {
                 that.PrintMessages(result.data.messages);
                 that.printUsers(result.data.users);
-                that.TotalMessageCount = result.data.messages.lenth;
+                that.TotalMessageCount = result.data.messages.length;
             }
         };
 
