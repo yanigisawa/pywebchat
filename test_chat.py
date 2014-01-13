@@ -16,6 +16,7 @@ class ChatUnitTests(unittest.TestCase):
 
     def setUp(self):
         chat._messages, chat._users = [], []
+        os.environ['UNIT_TEST'] = "true"
 
     def test_MessageObject_DoesNotReturnHTMLInMessagePropertyWhenConstructedWithHTML(self):
         msg = chat.Message(message = "<html>")
@@ -107,6 +108,15 @@ class ChatUnitTests(unittest.TestCase):
         self.assertEqual(1, len(msg))
         self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\" tabindex=\"-1\">http://www.google.com</a>",
             msg[0].message)
+
+    def test_ReadMessage_ThenPost_ThenReadMessage_ReturnsAMessage(self):
+        chat.getMessages()
+        m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "test message")
+        chat.storeMessage(m)
+
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
+        self.assertEqual(1, len(msg))
+
         
 def main():
     unittest.main()
