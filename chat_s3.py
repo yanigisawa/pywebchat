@@ -7,9 +7,10 @@ import os
 _conn = S3Connection()
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
 
-devBucket = 'jra_dev_webchat'
-prodBucket = 'jra_prod_webchat'
-_bucketName = devBucket
+
+_bucketName = os.environ.get('AWS_BUCKET_NAME')
+if not _bucketName:
+    print("###### AWS_BUCKET_NAME NOT SET #####")
 
 _testEnvKey = 'UNIT_TEST'
 
