@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import paste
-from bottle import run, template, static_file, request, post, get, put, hook
+from bottle import run, template, static_file, request, post, get, put, hook, response
 
 import os, json
 from datetime import datetime, timedelta
@@ -178,6 +178,7 @@ def history():
 @get('/history/:s3Key')
 def historyForKey(s3Key):
     messageList = getMessagesForKey(s3Key)
+    response.set_header('Content-Type', 'application/json')
     return json.dumps(getMessageArrayFromJson(messageList), cls=MessageEncoder)
 
 
