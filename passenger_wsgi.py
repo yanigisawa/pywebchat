@@ -4,11 +4,12 @@ if sys.executable != INTERP:
     os.execl(INTERP, INTERP, *sys.argv)
 sys.path.append(os.getcwd())
 
-import bottle
+from bottle import PasteServer
 import chat
 
-def application(environ, start_response):
-    return bottle.default_app().wsgi(environ, start_response)
+application = PasteServer(host='0.0.0.0')
+#def application(environ, start_response):
+#    return bottle.default_app().wsgi(environ, start_response)
 
 
 
