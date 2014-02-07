@@ -95,7 +95,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
                 message: msg,
             },
             error: function() { 
-                alert("failed to post message."); 
+                $("#messageLog").append("### - Failed to post message - ###</br>"); 
             },
             complete: function() {
                 _messageField.prop("readonly", false);
@@ -120,7 +120,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             dataType: "json",
             success: success,
             error: function() { 
-                alert("failed to read messages from server."); 
+                $("#messageLog").append("### - Failed to read messages from server - ###</br>"); 
             },
             complete: function () {
                 if (callBack !== undefined) { callBack(); }
@@ -179,7 +179,7 @@ ChatClient.SendActivity = function(isActive) {
             active: chatClient.Active,
         },
         error: function() { 
-            alert("failed to send user activity."); 
+            $("#messageLog").append("### - Failed to send user activity - ###</br>"); 
         }
     });
 }
