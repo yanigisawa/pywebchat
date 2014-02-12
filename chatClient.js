@@ -116,7 +116,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
 
         $.ajax({
             type: "POST",
-            url: "readmessages",
+            url: "/readmessages",
             dataType: "json",
             success: success,
             error: function() { 
@@ -133,7 +133,7 @@ var chatClient = new ChatClient($("#messageLog"), $("#userName"), $("#message"),
 
 ChatClient.poll = function (){
     $.ajax({ 
-        url: "poll", 
+        url: "/poll", 
         type: "POST",
         data: {
             poll: true,
@@ -171,7 +171,7 @@ ChatClient.SendActivity = function(isActive) {
 
     $.ajax({
         type: "PUT",
-        url: "useractivity",
+        url: "/useractivity",
         dataType: "json",
         data: { 
             name: $("#userName").val(), 
