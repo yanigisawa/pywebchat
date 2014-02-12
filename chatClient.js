@@ -88,7 +88,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
 
         $.ajax({
             type: "PUT",
-            url: "newmessage",
+            url: "/newmessage",
             dataType: "json",
             data: { 
                 name: _userNameField.val(), 
