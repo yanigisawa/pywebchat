@@ -108,6 +108,17 @@ class ChatUnitTests(unittest.TestCase):
         self.assertEqual(1, len(msg))
         self.assertEqual("<a href=\"http://www.google.com\" target=\"_blank\" tabindex=\"-1\">http://www.google.com</a>",
             msg[0].message)
+    
+    def test_ComplexLinkInMessage_IsConvertedToHtmlLink(self):
+        m = chat.Message(user = "TestUser", message = "http://johnbragg.smugmug.com/Other/ChoreoBusiness-Furniture/37756450_cFGjCq#!i=3127167673&k=cgrFStR")
+        chat.storeMessage(m)
+
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
+        self.assertEqual(1, len(msg))
+        self.assertEqual(
+            "<a href=\"http://johnbragg.smugmug.com/Other/ChoreoBusiness-Furniture/37756450_cFGjCq#!i=3127167673&k=cgrFStR\" target=\"_blank\" tabindex=\"-1\">" + 
+            "http://johnbragg.smugmug.com/Other/ChoreoBusiness-Furniture/37756450_cFGjCq#!i=3127167673&k=cgrFStR</a>",
+            msg[0].message)
 
     def test_ReadMessage_ThenPost_ThenReadMessage_ReturnsAMessage(self):
         chat.getMessages()
