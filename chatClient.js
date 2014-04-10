@@ -48,7 +48,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         var messages = [];
         for(var i = 0; i < messageCount; i++) {
             var cssClass = "generalUserStyle";
-            if (messageArr[i].user == _userNameField.val()) { 
+            if (messageArr[i].user != _userNameField.val()) { 
                 cssClass = "generalUserStyle userStyle";
             }
             messages.push("<span class='" + cssClass + "'>");
