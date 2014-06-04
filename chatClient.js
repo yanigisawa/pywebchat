@@ -8,6 +8,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
     this.Active = null;
     this.TitleToggleInterval = null;
     this.TotalMessageCount = 0;
+    this.ContinuePolling = true;
 
     this.ToggleTitle = function () {
         var text = document.title;
@@ -163,7 +164,11 @@ ChatClient.poll = function (){
             }
         }, 
         dataType: "json", 
-        complete: ChatClient.poll, 
+        complete: function() {
+            if (chatClient.ContinuePolling) {
+                ChatClient.poll();
+            }
+        }, 
         timeout: 60000 
     });
 };
@@ -190,17 +195,26 @@ ChatClient.SendActivity = function(isActive) {
     });
 }
 
+ChatClient.StopPolling = function() {
+    $("#messageLog").html("<b>Chat halted due to inactivity. Click Refresh to resume chat.</b>");
+    chatClient.ContinuePolling = false;
+    clearTimeout(ChatClient.ActivityTimer);
+}
+
 ChatClient.SetUserIdle = function() {
     var active_tmp = chatClient.Active;
     clearTimeout(ChatClient.ActivityTimer);
     ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, 120000);
     ChatClient.SendActivity(false);
+    var ninetyMinutes = 90 * 60 * 1000;
+    ChatClient.StopPollingTimer = setTimeout(ChatClient.StopPolling, ninetyMinutes); 
 };
 
 ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
 
 ChatClient.SetUserActive = function() {
     clearTimeout(ChatClient.ActivityTimer);
+    clearTimeout(ChatClient.StopPollingTimer);
     ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, chatClient.IdleInterval);
     if (!$("#userName").is(":focus") && !chatClient.Active) { ChatClient.SendActivity(true); }
 };
@@ -220,7 +234,12 @@ $(document).ready(function() {
         chatClient.TotalMessageCount = 0;
         $("#messageLog").html("");
         $("#users").html("");
-        chatClient.readMessages();
+        var callBack = null;
+        if (!chatClient.ContinuePolling) {
+            chatClient.ContinuePolling = true;
+            callBack = ChatClient.poll;
+        }
+        chatClient.readMessages(callBack);
     });
 
     $("#message").keypress(function (e) {
