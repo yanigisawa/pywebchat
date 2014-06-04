@@ -199,6 +199,7 @@ ChatClient.StopPolling = function() {
     $("#messageLog").html("<b>Chat halted due to inactivity. Click Refresh to resume chat.</b>");
     chatClient.ContinuePolling = false;
     clearTimeout(ChatClient.ActivityTimer);
+    clearTimeout(ChatClient.StopPollingTimer);
 }
 
 ChatClient.SetUserIdle = function() {
