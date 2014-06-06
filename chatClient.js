@@ -207,6 +207,7 @@ ChatClient.SetUserIdle = function() {
     clearTimeout(ChatClient.ActivityTimer);
     ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, 120000);
     ChatClient.SendActivity(false);
+    clearTimeout(ChatClient.StopPollingTimer);
     var ninetyMinutes = 240 * 60 * 1000;
     ChatClient.StopPollingTimer = setTimeout(ChatClient.StopPolling, ninetyMinutes); 
 };
