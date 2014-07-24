@@ -169,7 +169,7 @@ ChatClient.poll = function (){
                 ChatClient.poll();
             }
         }, 
-        timeout: 60000 
+        timeout: 40000 
     });
 };
 
