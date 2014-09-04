@@ -89,11 +89,16 @@ def getMessages():
     result = ApiResult()
     result.success = True
 
+    oneDay = timedelta(days = -1)
+    oneDayAgo = datetime.utcnow() + oneDay
+
     global _messages
     if len(_messages) == 0:
         messageString = getTodaysWebChatMessages()
         if messageString.strip() != "":
             _messages = getMessageArrayFromJson(messageString)
+    elif _messages[0].date.strftime("%Y_%m_%d") == oneDayAgo.strftime("%Y_%m_%d"):
+        _messages = []
 
     users = removeInactiveUsers(_users)
     chatResponse = ChatApiResponse(messages = _messages, users = _users)

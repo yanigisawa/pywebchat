@@ -16,7 +16,9 @@ class ChatUnitTests(unittest.TestCase):
 
     def setUp(self):
         chat._messages, chat._users = [], []
+        chat._secondsToWait = 1
         os.environ['UNIT_TEST'] = "true"
+        self.app = TestApp(bottle.default_app())
 
     def test_MessageObject_DoesNotReturnHTMLInMessagePropertyWhenConstructedWithHTML(self):
         msg = chat.Message(message = "<html>")
@@ -127,6 +129,14 @@ class ChatUnitTests(unittest.TestCase):
 
         msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(1, len(msg))
+
+    def test_ReadMessage_DoesNotReturnMessages24HoursOld(self):
+        today = datetime.utcnow()
+        twentyFourHours = timedelta(hours = -24)
+        m = chat.Message(user = "TestUser", date = today + twentyFourHours, message = "test message")
+        chat.storeMessage(m)
+        msg, users = getMessagesAndUsersFromJson(chat.getMessages())
+        self.assertEqual(0, len(msg))
 
         
 def main():

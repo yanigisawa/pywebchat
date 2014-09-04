@@ -4,7 +4,7 @@ import os, json, dateutil.parser, re
 from datetime import datetime, timedelta
 
 class Message(object):
-    def __init__(self, user = None, message = None, date = None, filterHTML = True):
+    def __init__(self, user = None, message = None, date = datetime.utcnow(), filterHTML = True):
         self.filterHTML = filterHTML
         self.user = user
         self.message = message
