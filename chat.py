@@ -13,7 +13,7 @@ from time import time, sleep
 from chat_s3 import getTodaysWebChatMessages, storeMessages, deleteTodaysMessages, getDayKeyListFromS3, getMessagesForKey
 from threading import Event
 
-_secondsToWait = 55 #seconds to pause the thread waiting for updates
+_secondsToWait = 29 #seconds to pause the thread waiting for updates
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
 _messages, _users = [], []
 _newMsg = Event()

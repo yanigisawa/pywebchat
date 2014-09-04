@@ -169,7 +169,7 @@ ChatClient.poll = function (){
                 ChatClient.poll();
             }
         }, 
-        timeout: 60000 
+        timeout: 40000 
     });
 };
 
@@ -207,7 +207,8 @@ ChatClient.SetUserIdle = function() {
     clearTimeout(ChatClient.ActivityTimer);
     ChatClient.ActivityTimer = setTimeout(ChatClient.SetUserIdle, 120000);
     ChatClient.SendActivity(false);
-    var ninetyMinutes = 90 * 60 * 1000;
+    clearTimeout(ChatClient.StopPollingTimer);
+    var ninetyMinutes = 240 * 60 * 1000;
     ChatClient.StopPollingTimer = setTimeout(ChatClient.StopPolling, ninetyMinutes); 
 };
 
