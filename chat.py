@@ -78,7 +78,7 @@ def getMessageArrayFromJson(jsonString):
     for item in dictArray:
         m = Message(
             user = item.user
-            , date = item.date
+            , date = datetime.strptime(item.date, "%Y-%m-%dT%H:%M:%S.%f")
             , message = item.message
             , filterHTML = False)
         arr.append(m)

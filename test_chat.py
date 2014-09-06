@@ -1,9 +1,11 @@
 import unittest
+import bottle
 import json
 import chat
 import os
 from datetime import datetime, timedelta
 from collections import namedtuple
+from webtest import TestApp
 
 def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
 def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
@@ -19,6 +21,8 @@ class ChatUnitTests(unittest.TestCase):
         chat._secondsToWait = 1
         os.environ['UNIT_TEST'] = "true"
         self.app = TestApp(bottle.default_app())
+        with open('test_data.json') as f:
+            self.test_json = f.readline()
 
     def test_MessageObject_DoesNotReturnHTMLInMessagePropertyWhenConstructedWithHTML(self):
         msg = chat.Message(message = "<html>")
@@ -132,11 +136,15 @@ class ChatUnitTests(unittest.TestCase):
 
     def test_ReadMessage_DoesNotReturnMessages24HoursOld(self):
         today = datetime.utcnow()
-        twentyFourHours = timedelta(hours = -24)
+        twentyFourHours = timedelta(days = -1)
         m = chat.Message(user = "TestUser", date = today + twentyFourHours, message = "test message")
         chat.storeMessage(m)
         msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(0, len(msg))
+
+    def test_GetMessageArrayFromJson_ParsesDateObjects(self):
+        arr = chat.getMessageArrayFromJson(self.test_json)
+        self.assertEqual(arr[0].date.strftime("%Y_%m_%d"), "2014_08_28") 
 
         
 def main():
