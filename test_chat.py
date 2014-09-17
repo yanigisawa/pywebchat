@@ -138,9 +138,12 @@ class ChatUnitTests(unittest.TestCase):
         today = datetime.utcnow()
         twentyFourHours = timedelta(days = -1)
         m = chat.Message(user = "TestUser", date = today + twentyFourHours, message = "test message")
+        yesterday = today + twentyFourHours
+        chat._todaysKey = yesterday.strftime("%Y_%m_%d")
         chat.storeMessage(m)
         msg, users = getMessagesAndUsersFromJson(chat.getMessages())
         self.assertEqual(0, len(msg))
+        self.assertEqual(today.strftime("%Y_%m_%d"), chat._todaysKey)
 
     def test_GetMessageArrayFromJson_ParsesDateObjects(self):
         arr = chat.getMessageArrayFromJson(self.test_json)

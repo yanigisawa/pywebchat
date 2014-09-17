@@ -92,12 +92,14 @@ def getMessages():
     oneDay = timedelta(days = -1)
     oneDayAgo = datetime.utcnow() + oneDay
 
+    global _todaysKey
     global _messages
     if len(_messages) == 0:
         messageString = getTodaysWebChatMessages()
         if messageString.strip() != "":
             _messages = getMessageArrayFromJson(messageString)
-    elif _messages[0].date.strftime("%Y_%m_%d") == oneDayAgo.strftime("%Y_%m_%d"):
+    elif _todaysKey == oneDayAgo.strftime("%Y_%m_%d"):
+        _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
         _messages = []
 
     users = removeInactiveUsers(_users)
