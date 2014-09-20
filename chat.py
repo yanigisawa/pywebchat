@@ -10,7 +10,7 @@ from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
     UserActivity, ChatLineType, ChatLogLine)
 from sched import scheduler
 from time import time, sleep
-from chat_s3 import getTodaysWebChatMessages, storeMessages, deleteTodaysMessages, getDayKeyListFromS3, getMessagesForKey
+from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
 from threading import Event
 
 _secondsToWait = 29 #seconds to pause the thread waiting for updates
@@ -25,7 +25,7 @@ def storeMessage(msg):
     _messages.append(msg)
     ua = UserActivity(name = msg.user, active = True, date = msg.date)
     logUserActivity(ua)
-    storeMessages(json.dumps(_messages, cls = MessageEncoder))
+    storeMessages(json.dumps(_messages, cls = MessageEncoder), _todaysKey)
     _newMsg.set()
 
 def logUserActivity(userActivity):
@@ -95,7 +95,7 @@ def getMessages():
     global _todaysKey
     global _messages
     if len(_messages) == 0:
-        messageString = getTodaysWebChatMessages()
+        messageString = getWebMessagesForKey(_todaysKey)
         if messageString.strip() != "":
             _messages = getMessageArrayFromJson(messageString)
     elif _todaysKey == oneDayAgo.strftime("%Y_%m_%d"):
@@ -169,7 +169,7 @@ def readMessages():
 
 @get('/clear')
 def clear():
-    deleteTodaysMessages()
+    deleteMessagesForKey(_todaysKey)
     _messages = []
     return "Todays messages deleted"
 

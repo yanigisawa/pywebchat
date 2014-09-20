@@ -5,8 +5,6 @@ from threading import Thread
 import os
 
 _conn = S3Connection()
-_todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-
 
 _bucketName = os.environ.get('AWS_BUCKET_NAME')
 if not _bucketName:
@@ -14,39 +12,39 @@ if not _bucketName:
 
 _testEnvKey = 'UNIT_TEST'
 
-def postToS3Async(jsonMessages):
+def postToS3Async(jsonMessages, s3_key):
 
     if os.environ.get(_testEnvKey):
         return
 
     bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(_todaysKey)
+    key = bucket.get_key(s3_key)
     if key is None:
         key = Key(bucket)
-        key.key = _todaysKey
+        key.key = s3_key
 
     key.set_contents_from_string(jsonMessages)
     
 
-def getTodaysWebChatMessages():
+def getWebMessagesForKey(s3_key):
     if os.environ.get(_testEnvKey):
         return ""
 
     bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(_todaysKey)
+    key = bucket.get_key(s3_key)
     messages = ""
     if not key is None:
         messages = key.get_contents_as_string()
 
     return messages
 
-def storeMessages(jsonMessages):
-    thread = Thread(target=postToS3Async, args=(jsonMessages,))
+def storeMessages(jsonMessages, s3_key):
+    thread = Thread(target=postToS3Async, args=(jsonMessages,s3_key))
     thread.start()
 
-def deleteTodaysMessages():
+def deleteMessagesForKey(s3_key):
     bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(_todaysKey)
+    key = bucket.get_key(s3_key)
     messages = ""
     if not key is None:
         key.delete()
