@@ -89,8 +89,7 @@ def getMessages():
     result = ApiResult()
     result.success = True
 
-    oneDay = timedelta(days = -1)
-    oneDayAgo = datetime.utcnow() + oneDay
+    today = datetime.utcnow().strftime("%Y_%m_%d")
 
     global _todaysKey
     global _messages
@@ -98,8 +97,8 @@ def getMessages():
         messageString = getWebMessagesForKey(_todaysKey)
         if messageString.strip() != "":
             _messages = getMessageArrayFromJson(messageString)
-    elif _todaysKey == oneDayAgo.strftime("%Y_%m_%d"):
-        _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
+    elif _todaysKey != today:
+        _todaysKey = today
         _messages = []
 
     users = removeInactiveUsers(_users)
