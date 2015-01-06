@@ -52,12 +52,15 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
             if (messageArr[i].user != _userNameField.val()) { 
                 cssClass = "generalUserStyle userStyle";
             }
-            messages.push("<span class='" + cssClass + "'>");
-            messages.push("<span class='metaData'>", messageArr[i].user, " - ");
-            messages.push(formatTime(messageArr[i].date), "</span><span class='message'>");
-            messages.push(": ", messageArr[i].message, "</span></span>");
+            messageArr[i].cssClass = cssClass;
+            messageArr[i].date = formatTime(messageArr[i].date);
         }
-        _messageLog.html(messages.join(""));
+
+        var source = $("#message-template").html();
+        var template = Handlebars.compile(source);
+
+        var html = template({ messages: messageArr});
+        _messageLog.html(html);
         this.scrollToBottom();
     };
 
@@ -66,14 +69,17 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
         var userStringArr = [];
 
         for (var i = 0; i < userCount; i++) {
+            var image = "idle";
             if (userArray[i].active) {
-                userStringArr.push("<img src='img/online.png' height='16px' width='16px' />");
-            } else {
-                userStringArr.push("<img src='img/idle.png' height='16px' width='16px' />");
+                image = "online";
             }
-            userStringArr.push("<span class='user'>", userArray[i].name, "</span></br>");
+            userArray[i].image = image;
         }
-        _userLog.html(userStringArr.join(""));
+        
+        var source = $("#user-template").html();
+        var template = Handlebars.compile(source);
+
+        _userLog.html(template({ users: userArray }));
     };
 
     this.postMessage = function () {

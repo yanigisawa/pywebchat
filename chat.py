@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import paste
-from bottle import run, template, static_file, request, post, get, put, hook, response
+from bottle import run, template, static_file, request, post, get, put, hook, response, route
 
 import os, json
 from datetime import datetime, timedelta
@@ -115,19 +115,12 @@ def getJsonSuccessResponse():
 
 @get('/')
 def index():
-    return static_file("index.html", ".")
+    return static_file("index.html", 'static')
 
-@get('/js')
-def javaScript():
-    return static_file("chatClient.js", ".")
-
-@get('/hotkeyjs')
-def hotKeys():
-    return static_file("jquery.hotkeys.js", ".")
-
-@get('/img/:imageName')
-def serveImages(imageName):
-    return static_file(imageName, "./img")
+@route('/static/:path#.+#', name='static')
+def static(path):
+    response.set_header('Cache-Control', 'no-cache')
+    return static_file(path, root='static')
 
 @put('/newmessage')
 def newMessage():
