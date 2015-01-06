@@ -7,7 +7,7 @@ import os, json
 from datetime import datetime, timedelta
 from collections import namedtuple
 from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
-    UserActivity, ChatLineType, ChatLogLine)
+    UserActivity)
 from sched import scheduler
 from time import time, sleep
 from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
