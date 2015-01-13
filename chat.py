@@ -5,21 +5,17 @@ from bottle import run, template, static_file, request, post, get, put, hook, re
 
 import os, json
 from datetime import datetime, timedelta
-from collections import namedtuple
 from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
-    UserActivity)
-from sched import scheduler
+    UserActivity, getMessageArrayFromJson)
 from time import time, sleep
 from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
 from threading import Event
 
 _secondsToWait = 29 #seconds to pause the thread waiting for updates
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-_messages, _users = [], []
+#_messages, _users = [], []
+_users = []
 _newMsg = Event()
-
-def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
-def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
 
 def storeMessage(msg):
     _messages.append(msg)
@@ -71,19 +67,6 @@ def setUserActivityDate(userArray, userName, date):
             break
 
     return userArray
-
-def getMessageArrayFromJson(jsonString):
-    dictArray = json2obj(jsonString)
-    arr = []
-    for item in dictArray:
-        m = Message(
-            user = item.user
-            , date = datetime.strptime(item.date, "%Y-%m-%dT%H:%M:%S.%f")
-            , message = item.message
-            , filterHTML = False)
-        arr.append(m)
-
-    return arr
 
 def getMessages():
     result = ApiResult()
@@ -149,7 +132,6 @@ def userActivity():
 
 @post('/poll')
 def poll():
-
     _newMsg.clear()
     _newMsg.wait(_secondsToWait)
 

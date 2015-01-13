@@ -1,7 +1,6 @@
-#!/usr/bin/python
-
 import os, json, dateutil.parser, re
 from datetime import datetime, timedelta
+from collections import namedtuple
 
 class Message(object):
     def __init__(self, user = None, message = None, date = datetime.utcnow(), filterHTML = True):
@@ -35,7 +34,7 @@ class Message(object):
             else: 
                 self.m_message = value
 
-    def __str__(self):
+    def __repr__(self):
         return "{0} - {1}: {2}".format(self.date, self.user, self.message)
 
 class UserActivity(object):
@@ -108,6 +107,22 @@ class MessageEncoder(json.JSONEncoder):
             return obj.__dict__
 
         return super(MessageEncoder, self).default(obj)
+
+def _json_object_hook(d): return namedtuple('X', d.keys())(*d.values())
+def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
+
+def getMessageArrayFromJson(jsonString):
+    dictArray = json2obj(jsonString)
+    arr = []
+    for item in dictArray:
+        m = Message(
+            user = item.user
+            , date = datetime.strptime(item.date, "%Y-%m-%dT%H:%M:%S.%f")
+            , message = item.message
+            , filterHTML = False)
+        arr.append(m)
+
+    return arr
 
 class ChatLineType(object):
     UserActivity = 1

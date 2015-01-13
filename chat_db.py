@@ -1,71 +1,99 @@
+from chatModels import Message, MessageEncoder, getMessageArrayFromJson
+import json
 from datetime import datetime
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
-from threading import Thread
 import os
+import boto.dynamodb2
+from boto.dynamodb2.fields import HashKey, RangeKey
+from boto.dynamodb2.table import Table
+from boto.dynamodb2.layer1 import DynamoDBConnection
+from boto.dynamodb2.exceptions import JSONResponseError
 
-_conn = S3Connection()
+_dynamodb_batch_size = 25
+_message_table = "webchat_messages"
 
-_bucketName = os.environ.get('AWS_BUCKET_NAME')
-if not _bucketName:
-    print("###### AWS_BUCKET_NAME NOT SET #####")
+def getMessageTable():
+    conn = None
+    if os.environ.get('DEVELOPER_MODE'):
+        conn = DynamoDBConnection(
+            host = 'localhost',
+            port = 8000,
+            aws_access_key_id = 'unit_test',
+            aws_secret_access_key = 'unit_test',
+            is_secure = False)
+    else:
+        conn = DynamoDBConnection()
 
-_testEnvKey = 'UNIT_TEST'
+    try:
+        msg_table_desc = conn.describe_table(_message_table)
+        msg_table = Table(_message_table, connection = conn)
+    except JSONResponseError as e:
+        # Only handle the ResourceNotFoundException here
+        if e.error_code != 'ResourceNotFoundException':
+            raise e
 
-def postToS3Async(jsonMessages, s3_key):
+        msg_table = Table.create(_message_table, 
+            schema=[
+                HashKey('date_string'),
+                RangeKey('date')
+            ], 
+            connection = conn)
 
-    if os.environ.get(_testEnvKey):
-        return
+    while not msg_table.describe()['Table']['TableStatus'] == "ACTIVE":
+        sleep(1)
 
-    bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(s3_key)
-    if key is None:
-        key = Key(bucket)
-        key.key = s3_key
+    return msg_table
 
-    key.set_contents_from_string(jsonMessages)
+def getDynamoDBMessage(message):
+    dyn_msg = {}
+    dyn_msg['date'] = message.date.isoformat()
+    dyn_msg['message'] = message.message
+    dyn_msg['user'] = message.user
+
+    return dyn_msg
+
+def getMessageFromDynObject(dyn_dict):
+    """Converts a DynoDB object back into a Message python object
+
+    :dyn_dict: DynamoDB stored object
+    :returns: Message python object
+
+    """
+    return Message(user = dyn_dict['user']
+            , date = datetime.strptime(dyn_dict['date'], "%Y-%m-%dT%H:%M:%S.%f")
+            , message = dyn_dict['message'])
+
+def storeMessageArray(date_string, messages):
+    msg_table = getMessageTable()
+    dyn_dict = {}
+    write_count = 0
+    for msg in messages:
+        dyn_dict = getDynamoDBMessage(msg)
+        dyn_dict['date_string'] = date_string
+        msg_table.put_item(data = dyn_dict)
+        write_count += 1
+
+    return write_count
+
+def getAllMessages():
+    """Returns All Messages from the table
+    Remove this method after development is complete. 
+    There is no reason to return all records in the table.
+
+    """
+    msg_table = getMessageTable()
+    all_msgs = list(msg_table.scan())
+    msgs = []
+    for m in all_msgs:
+        msgs.append(getMessageFromDynObject(m))
+
+    return msgs
+
+def getMessagesSince(date):
+    msg_table = getMessageTable()
+    #filtered_msgs = list(msg_table.scan(date__gte=date.isoformat()))
+    todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
+    filtered_msgs = msg_table.query(todaysKey, date__gte = date.isoformat())
     
+    return filtered_msgs
 
-def getWebMessagesForKey(s3_key):
-    if os.environ.get(_testEnvKey):
-        return ""
-
-    bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(s3_key)
-    messages = ""
-    if not key is None:
-        messages = key.get_contents_as_string()
-
-    return messages
-
-def storeMessages(jsonMessages, s3_key):
-    thread = Thread(target=postToS3Async, args=(jsonMessages,s3_key))
-    thread.start()
-
-def deleteMessagesForKey(s3_key):
-    bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(s3_key)
-    messages = ""
-    if not key is None:
-        key.delete()
-
-def getDayKeyListFromS3():
-    if os.environ.get(_testEnvKey):
-        return
-
-    bucket = _conn.get_bucket(_bucketName)
-    keyList = bucket.list()
-    return [k.key for k in keyList]
-
-def getMessagesForKey(s3KeyStr):
-    if os.environ.get(_testEnvKey):
-        return ""
-
-    bucket = _conn.get_bucket(_bucketName)
-    key = bucket.get_key(s3KeyStr)
-    messages = ""
-    if not key is None:
-        messages = key.get_contents_as_string()
-
-    return messages
 
