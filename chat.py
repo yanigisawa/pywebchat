@@ -8,20 +8,21 @@ from datetime import datetime, timedelta
 from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
     UserActivity, getMessageArrayFromJson)
 from time import time, sleep
-from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
+#from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
+from chat_db import storeSingleMessage, getMessagesForHashKey
 from threading import Event
 
 _secondsToWait = 29 #seconds to pause the thread waiting for updates
 _todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-#_messages, _users = [], []
-_users = []
+_users, _messages = [], []
 _newMsg = Event()
 
 def storeMessage(msg):
     _messages.append(msg)
     ua = UserActivity(name = msg.user, active = True, date = msg.date)
     logUserActivity(ua)
-    storeMessages(json.dumps(_messages, cls = MessageEncoder), _todaysKey)
+    storeSingleMessage(_todaysKey, msg)
+
     _newMsg.set()
 
 def logUserActivity(userActivity):
@@ -77,9 +78,7 @@ def getMessages():
     global _todaysKey
     global _messages
     if len(_messages) == 0:
-        messageString = getWebMessagesForKey(_todaysKey)
-        if messageString.strip() != "":
-            _messages = getMessageArrayFromJson(messageString)
+        _messages = getMessagesForHashKey(_todaysKey)
     elif _todaysKey != today:
         _todaysKey = today
         _messages = []

@@ -33,9 +33,22 @@ class Message(object):
                 self.m_message = Message.replaceUrlsWithLinks(self.m_message)
             else: 
                 self.m_message = value
+    
+    @property
+    def date(self):
+        return self.m_date
+
+    @date.setter
+    def date(self, value):
+        if isinstance(value, datetime):
+            self.m_date = value 
+        elif value != None:
+            self.m_date = dateutil.parser.parse(value)
+        else:
+            self.m_date = None
 
     def __repr__(self):
-        return "{0} - {1}: {2}".format(self.date, self.user, self.message)
+        return "Date: {0} - User: {1} - Message: {2}".format(self.date, self.user, self.message)
 
 class UserActivity(object):
     def __init__(self, name = None, active = False, date = None):
@@ -117,18 +130,10 @@ def getMessageArrayFromJson(jsonString):
     for item in dictArray:
         m = Message(
             user = item.user
-            , date = datetime.strptime(item.date, "%Y-%m-%dT%H:%M:%S.%f")
+            , date = item.date 
             , message = item.message
             , filterHTML = False)
         arr.append(m)
 
     return arr
 
-class ChatLineType(object):
-    UserActivity = 1
-    Message = 2
-
-class ChatLogLine(object):
-    def __init__(self, logType = ChatLineType.Message, obj = None):
-        self.logType = logType
-        self.obj = obj

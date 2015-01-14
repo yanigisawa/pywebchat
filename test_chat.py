@@ -14,11 +14,19 @@ def getMessagesAndUsersFromJson(json):
     response = json2obj(json)
     return response.data.messages, response.data.users
 
+def mock_storeSingleMessage(key, msg):
+    pass
+
+def mock_getMessagesForHashKey(key):
+   return [] 
+
 class ChatUnitTests(unittest.TestCase):
 
     def setUp(self):
         chat._messages, chat._users = [], []
         chat._secondsToWait = 1
+        chat.storeSingleMessage = mock_storeSingleMessage
+        chat.getMessagesForHashKey = mock_getMessagesForHashKey
         os.environ['UNIT_TEST'] = "true"
         self.app = TestApp(bottle.default_app())
         with open('test_data.json') as f:

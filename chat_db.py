@@ -7,6 +7,7 @@ from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.layer1 import DynamoDBConnection
 from boto.dynamodb2.exceptions import JSONResponseError
+import dateutil.parser
 
 _dynamodb_batch_size = 25
 _message_table = "webchat_messages"
@@ -59,8 +60,15 @@ def getMessageFromDynObject(dyn_dict):
 
     """
     return Message(user = dyn_dict['user']
-            , date = datetime.strptime(dyn_dict['date'], "%Y-%m-%dT%H:%M:%S.%f")
+            , date = dateutil.parser.parser(dyn_dict['date'])
             , message = dyn_dict['message'])
+
+def storeSingleMessage(date_string, message):
+    msg_table = getMessageTable()
+    dyn_dict = getDynamoDBMessage(message)
+    dyn_dict['date_string'] = date_string
+    msg_table.put_item(data = dyn_dict)
+
 
 def storeMessageArray(date_string, messages):
     msg_table = getMessageTable()
@@ -74,26 +82,19 @@ def storeMessageArray(date_string, messages):
 
     return write_count
 
-def getAllMessages():
-    """Returns All Messages from the table
-    Remove this method after development is complete. 
-    There is no reason to return all records in the table.
-
-    """
-    msg_table = getMessageTable()
-    all_msgs = list(msg_table.scan())
-    msgs = []
-    for m in all_msgs:
-        msgs.append(getMessageFromDynObject(m))
-
-    return msgs
-
 def getMessagesSince(date):
     msg_table = getMessageTable()
-    #filtered_msgs = list(msg_table.scan(date__gte=date.isoformat()))
     todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-    filtered_msgs = msg_table.query(todaysKey, date__gte = date.isoformat())
+    filtered_msgs = list(msg_table.query(date_string__eq = todaysKey, date__gte = date.isoformat()))
     
     return filtered_msgs
+
+def getMessagesForHashKey(key):
+    msg_table = getMessageTable()
+
+    filtered_msgs = list(msg_table.query(date_string__eq = key))
+
+    return filtered_msgs
+    
 
 

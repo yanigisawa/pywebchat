@@ -4,12 +4,12 @@ import os
 from datetime import datetime, timedelta
 from collections import namedtuple
 import chat_db as db
-from chatModels import Message
+from chatModels import Message, MessageEncoder
 from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.layer1 import DynamoDBConnection
 from boto.dynamodb2.exceptions import JSONResponseError
-from chat import getMessageArrayFromJson
+from chat_db import getMessageArrayFromJson
 
 import logging
 logging.getLogger('boto').setLevel(logging.CRITICAL)
@@ -35,14 +35,25 @@ class ChatDbUnitTests(unittest.TestCase):
             aws_secret_access_key = 'unit_test',
             is_secure = False)
 
-        msg_table = Table.create(db._message_table, 
-            schema=[
-                HashKey('date_string'),
-                RangeKey('date')
-            ], 
-            connection = conn)
+        try:
+            msg_table = Table.create(db._message_table, 
+                schema=[
+                    HashKey('date_string'),
+                    RangeKey('date')
+                ], 
+                connection = conn)
+        except JSONResponseError as e:
+            conn.delete_table(db._message_table)
+            #print("Could not create test table: {0}".format(e))
+
         with open('test_data.json') as f:
             self.test_json = f.readline()
+
+        with open('test2_data.json', 'w') as f:
+            utc = datetime.utcnow()
+            utc_midnight = datetime(utc.year, utc.month, utc.day)
+            msgs = self.generateMessageEveryHourSince(utc_midnight)
+            f.write(json.dumps(msgs, cls = MessageEncoder))
 
     def tearDown(self):
         """Any tear down steps post test run.
@@ -76,14 +87,6 @@ class ChatDbUnitTests(unittest.TestCase):
         affected_records = db.storeMessageArray(self.todaysKey, msg_array)
         self.assertEqual(len(msg_array), affected_records)
 
-    def test_ScanTable_ReturnsAllRecords(self):
-        msg_array = sorted(getMessageArrayFromJson(self.test_json), key = lambda msg: msg.date)
-        affected_records = db.storeMessageArray(self.todaysKey, msg_array)
-        all_records = sorted(db.getAllMessages(), key = lambda msg: msg.date )
-        self.assertEqual(len(msg_array), len(all_records))
-        for i in range(len(msg_array)):
-            self.assertEqual(msg_array[i].date, all_records[i].date)
-
     def test_GivenTwoDaysWorthOfMessages_OnlyMessagesSinceMidnightAreReturned(self):
         two_days_ago = timedelta(days = -2)
         msgs = self.generateMessageEveryHourSince(datetime.utcnow() + two_days_ago)
@@ -94,8 +97,23 @@ class ChatDbUnitTests(unittest.TestCase):
         utc_midnight = datetime(utc.year, utc.month, utc.day)
 
         db_msgs = db.getMessagesSince(utc_midnight)
-        # test_msgs = [x for x in msgs if x.date > utc_midnight]
-        # self.assertEqual(len(test_msgs), len(db_msgs))
+        test_msgs = [x for x in msgs if x.date > utc_midnight]
+        self.assertEqual(len(test_msgs), len(db_msgs))
+
+    def test_GivenIsoDateWithoutMicroseconds_DateCanStillBeParsed(self):
+        utc = datetime.utcnow()
+        utc_midnight = datetime(utc.year, utc.month, utc.day)
+        m = self.generateMessageEveryHourSince(utc_midnight)
+        getMessageArrayFromJson(json.dumps(m, cls = MessageEncoder))
+
+    def test_GivenTwoDaysWorthOfMessages_ReturnAllOfCurrentDaysMessages(self):
+        two_days_ago = timedelta(days = -2)
+        msgs = self.generateMessageEveryHourSince(datetime.utcnow() + two_days_ago)
+
+        db.storeMessageArray(self.todaysKey, msgs)
+
+        db_msgs = db.getMessagesForHashKey(self.todaysKey)
+        self.assertEqual(len(msgs), len(db_msgs))
 
 def main():
     unittest.main()
