@@ -9,8 +9,11 @@ from boto.dynamodb2.layer1 import DynamoDBConnection
 from boto.dynamodb2.exceptions import JSONResponseError
 import dateutil.parser
 
-_dynamodb_batch_size = 25
-_message_table = "webchat_messages"
+env = "test"
+if os.environ.get("ENVIRONMENT"):
+    env = os.environ.get("ENVIRONMENT")
+
+_message_table = "{0}.webchat_messages".format(env)
 
 def getMessageTable():
     conn = None
@@ -60,7 +63,7 @@ def getMessageFromDynObject(dyn_dict):
 
     """
     return Message(user = dyn_dict['user']
-            , date = dateutil.parser.parser(dyn_dict['date'])
+            , date = dateutil.parser.parse(dyn_dict['date'])
             , message = dyn_dict['message'])
 
 def storeSingleMessage(date_string, message):
@@ -82,17 +85,16 @@ def storeMessageArray(date_string, messages):
 
     return write_count
 
-def getMessagesSince(date):
+def getMessagesSince(key, date):
     msg_table = getMessageTable()
-    todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
-    filtered_msgs = list(msg_table.query(date_string__eq = todaysKey, date__gte = date.isoformat()))
+    filtered_msgs = msg_table.query(date_string__eq = key, date__gte = date.isoformat())
     
-    return filtered_msgs
+    return [getMessageFromDynObject(x) for x in filtered_msgs]
 
 def getMessagesForHashKey(key):
     msg_table = getMessageTable()
 
-    filtered_msgs = list(msg_table.query(date_string__eq = key))
+    filtered_msgs = [getMessageFromDynObject(x) for x in msg_table.query(date_string__eq = key)]
 
     return filtered_msgs
     

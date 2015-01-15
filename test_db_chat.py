@@ -25,6 +25,19 @@ def getMessagesAndUsersFromJson(json):
     response = json2obj(json)
     return response.data.messages, response.data.users
 
+def generateMessageEveryHourSince(date):
+    msgs = []
+    oneHour = timedelta(hours = -1)
+    keyDate = datetime.utcnow()
+    while date < keyDate:
+        msgs.append(Message(
+            user = 'test user{0}'.format(keyDate.hour),
+            date = keyDate,
+            message = 'test message {0}'.format(keyDate.hour)))
+        keyDate = keyDate + oneHour
+
+    return msgs
+
 class ChatDbUnitTests(unittest.TestCase):
     def setUp(self):
         self.todaysKey = datetime.utcnow().strftime("%Y_%m_%d")
@@ -52,7 +65,7 @@ class ChatDbUnitTests(unittest.TestCase):
         with open('test2_data.json', 'w') as f:
             utc = datetime.utcnow()
             utc_midnight = datetime(utc.year, utc.month, utc.day)
-            msgs = self.generateMessageEveryHourSince(utc_midnight)
+            msgs = generateMessageEveryHourSince(utc_midnight)
             f.write(json.dumps(msgs, cls = MessageEncoder))
 
     def tearDown(self):
@@ -70,17 +83,6 @@ class ChatDbUnitTests(unittest.TestCase):
 
         conn.delete_table(db._message_table)
 
-    def generateMessageEveryHourSince(self, date):
-        msgs = []
-        today = datetime.now()
-        oneHour = timedelta(hours = 1)
-        while date < today:
-            msgs.append(Message(date = date,
-                user = 'test user',
-                message = 'test message'))
-            date = date + oneHour
-
-        return msgs
 
     def test_LoadTestData_ReturnsRecordCount(self):
         msg_array = getMessageArrayFromJson(self.test_json)
@@ -89,31 +91,39 @@ class ChatDbUnitTests(unittest.TestCase):
 
     def test_GivenTwoDaysWorthOfMessages_OnlyMessagesSinceMidnightAreReturned(self):
         two_days_ago = timedelta(days = -2)
-        msgs = self.generateMessageEveryHourSince(datetime.utcnow() + two_days_ago)
+        msgs = generateMessageEveryHourSince(datetime.utcnow() + two_days_ago) 
 
         db.storeMessageArray(self.todaysKey, msgs)
 
         utc = datetime.utcnow()
         utc_midnight = datetime(utc.year, utc.month, utc.day)
 
-        db_msgs = db.getMessagesSince(utc_midnight)
-        test_msgs = [x for x in msgs if x.date > utc_midnight]
+        db_msgs = sorted(db.getMessagesSince(self.todaysKey, utc_midnight))
+        test_msgs = sorted([x for x in msgs if x.date > utc_midnight])
         self.assertEqual(len(test_msgs), len(db_msgs))
+        for i in range(len(db_msgs)):
+            self.assertEqual(db_msgs[i].date, test_msgs[i].date) 
+            self.assertEqual(db_msgs[i].user, test_msgs[i].user)
+            self.assertEqual(db_msgs[i].message, test_msgs[i].message)
 
     def test_GivenIsoDateWithoutMicroseconds_DateCanStillBeParsed(self):
         utc = datetime.utcnow()
         utc_midnight = datetime(utc.year, utc.month, utc.day)
-        m = self.generateMessageEveryHourSince(utc_midnight)
+        m = generateMessageEveryHourSince(utc_midnight)
         getMessageArrayFromJson(json.dumps(m, cls = MessageEncoder))
 
     def test_GivenTwoDaysWorthOfMessages_ReturnAllOfCurrentDaysMessages(self):
         two_days_ago = timedelta(days = -2)
-        msgs = self.generateMessageEveryHourSince(datetime.utcnow() + two_days_ago)
+        msgs = sorted(generateMessageEveryHourSince(datetime.utcnow() + two_days_ago), key = lambda msg: msg.date)
 
         db.storeMessageArray(self.todaysKey, msgs)
 
-        db_msgs = db.getMessagesForHashKey(self.todaysKey)
+        db_msgs = sorted(db.getMessagesForHashKey(self.todaysKey), key = lambda msg: msg.date)
         self.assertEqual(len(msgs), len(db_msgs))
+        for i in range(len(db_msgs)):
+            self.assertEqual(db_msgs[i].date, msgs[i].date)
+            self.assertEqual(db_msgs[i].user, msgs[i].user)
+            self.assertEqual(db_msgs[i].message, msgs[i].message)
 
 def main():
     unittest.main()

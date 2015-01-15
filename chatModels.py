@@ -50,6 +50,10 @@ class Message(object):
     def __repr__(self):
         return "Date: {0} - User: {1} - Message: {2}".format(self.date, self.user, self.message)
 
+    def __cmp__(self, other):
+        if hasattr(other, 'date'):
+            return cmp(self.date, other.date)
+
 class UserActivity(object):
     def __init__(self, name = None, active = False, date = None):
         self.name = name
