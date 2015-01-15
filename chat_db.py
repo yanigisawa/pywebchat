@@ -94,7 +94,7 @@ def getMessagesSince(key, date):
 def getMessagesForHashKey(key):
     msg_table = getMessageTable()
 
-    filtered_msgs = [getMessageFromDynObject(x) for x in msg_table.query(date_string__eq = key)]
+    filtered_msgs = sorted([getMessageFromDynObject(x) for x in msg_table.query(date_string__eq = key)])
 
     return filtered_msgs
     
