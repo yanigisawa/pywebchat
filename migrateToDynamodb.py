@@ -12,12 +12,18 @@ def main():
     keys = getDayKeyListFromS3()
 
     for key in keys:
+        print("Querying key: {0}".format(key))
         msgs = getMessageArrayFromJson(getMessagesForKey(key))
+        totalMessages = len(msgs)
 
         db_msgs = getMessagesForHashKey(key)
         for msg in db_msgs:
             if msg in msgs:
                 msgs.remove(msg)
+
+        messagesToTransfer = len(msgs)
+
+        print("Found {0} message(s), transferring {1} message(s)".format(totalMessages, messagesToTransfer))
 
         sleepCounter = 1
         for m in msgs:
@@ -27,7 +33,6 @@ def main():
 
             storeSingleMessage(key, m)
             sleepCounter += 1
-
 
 if __name__ == '__main__':
     main()

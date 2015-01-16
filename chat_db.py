@@ -39,10 +39,14 @@ def getMessageTable():
             schema=[
                 HashKey('date_string'),
                 RangeKey('date')
-            ], 
+            ], throughput = {
+                'read' : 5,
+                'write' : 5
+            },
             connection = conn)
 
     while not msg_table.describe()['Table']['TableStatus'] == "ACTIVE":
+        from time import sleep
         sleep(1)
 
     return msg_table
@@ -64,14 +68,14 @@ def getMessageFromDynObject(dyn_dict):
     """
     return Message(user = dyn_dict['user']
             , date = dateutil.parser.parse(dyn_dict['date'])
-            , message = dyn_dict['message'])
+            , message = dyn_dict['message']
+            , filterHTML = False)
 
 def storeSingleMessage(date_string, message):
     msg_table = getMessageTable()
     dyn_dict = getDynamoDBMessage(message)
     dyn_dict['date_string'] = date_string
     msg_table.put_item(data = dyn_dict)
-
 
 def storeMessageArray(date_string, messages):
     msg_table = getMessageTable()
@@ -98,5 +102,19 @@ def getMessagesForHashKey(key):
 
     return filtered_msgs
     
+def getDayKeyList():
+    """Returns All Messages from the table
+    Remove this method after development is complete. 
+    There is no reason to return all records in the table.
+
+    """
+    msg_table = getMessageTable()
+    all_msgs = list(msg_table.scan())
+    keys = []
+    for m in all_msgs:
+        if m['date_string'] not in keys:
+            keys.append(m['date_string'])
+
+    return keys
 
 

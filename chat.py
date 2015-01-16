@@ -8,8 +8,7 @@ from datetime import datetime, timedelta
 from chatModels import (ChatApiResponse, ApiResult, MessageEncoder, Message,
     UserActivity, getMessageArrayFromJson)
 from time import time, sleep
-#from chat_s3 import getWebMessagesForKey, storeMessages, deleteMessagesForKey, getDayKeyListFromS3, getMessagesForKey
-from chat_db import storeSingleMessage, getMessagesForHashKey
+from chat_db import storeSingleMessage, getMessagesForHashKey, getDayKeyList
 from threading import Event
 
 _secondsToWait = 29 #seconds to pause the thread waiting for updates
@@ -148,19 +147,18 @@ def clear():
 
 @get('/history')
 def history():
-    keyList = getDayKeyListFromS3()
+    keyList = getDayKeyList()
     listStr = ""
     for k in keyList:
         listStr += "<a href='/history/{0}'>{0}</a><br/>".format(k)
 
     return listStr
 
-@get('/history/:s3Key')
-def historyForKey(s3Key):
-    messageList = getMessagesForKey(s3Key)
+@get('/history/:key')
+def historyForKey(key):
+    messageList = getMessagesForHashKey(key)
     response.set_header('Content-Type', 'application/json')
-    return json.dumps(getMessageArrayFromJson(messageList), cls=MessageEncoder)
-
+    return json.dumps(messageList, cls=MessageEncoder)
 
 if __name__ == "__main__":
     run(server='paste', reloader=True, port=5000)
