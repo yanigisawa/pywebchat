@@ -14,13 +14,34 @@ if os.environ.get("ENVIRONMENT"):
     env = os.environ.get("ENVIRONMENT")
 
 _message_table = "{0}.webchat_messages".format(env)
+_foundDynamoDbLocal = False
+
+def confirmDynamoDbLocalIsRunning(host, port):
+    global _foundDynamoDbLocal
+    if _foundDynamoDbLocal: 
+        return
+
+    print('_foundDynamoDbLocal is {0}, contining'.format(_foundDynamoDbLocal))
+
+    try:
+        import telnetlib
+        telnetlib.Telnet(host, port, 1)
+        _foundDynamoDbLocal = True
+    except Exception as e:
+        print("###################")
+        print("Could not conect to dynamodb at {0}:{1}".format(host, port))
+        print("###################")
+
+        raise e
 
 def getMessageTable():
     conn = None
     if os.environ.get('DEVELOPER_MODE'):
+        host, port = 'localhost', 8000
+        confirmDynamoDbLocalIsRunning(host, port)
         conn = DynamoDBConnection(
-            host = 'localhost',
-            port = 8000,
+            host = host,
+            port = port,
             aws_access_key_id = 'unit_test',
             aws_secret_access_key = 'unit_test',
             is_secure = False)
