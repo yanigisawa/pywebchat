@@ -1,0 +1,116 @@
+ul { list-style-type: none; }
+html { font-size: 100%; }
+body { margin-left: 5px; font-family: Arial; font-size: 1em; 
+    height: 100%; 
+    overflow: hidden;
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        right bottom,
+        color-stop(0, #FAF7F9),
+        color-stop(1, #EEEBFB)
+    );
+    background-image: -o-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+    background-image: -moz-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+    background-image: -webkit-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+    background-image: -ms-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+    background-image: linear-gradient(to right bottom, #FAF7F9 0%, #EEEBFB 100%);
+
+}
+.metaData {
+    font-weight: bold;
+    font-size: 90%;
+}
+#message { width: 55%; }
+#userName { width: 100px; }
+.usersContainer { 
+    float: right; width: 15%; height: 80%;
+    margin-left: 5px;
+    margin-top: -22px;
+}
+#messageLog {
+    overflow-y: auto;
+    height: 80%;
+    display: block;
+    margin: 7px 2px 5px 5px;
+    border: 1px solid black;
+}
+.posting { background-color: gray; }
+.userStyle { background-color: #dcc5ed; }
+.generalUserStyle { display: block; padding: 0 5px; }
+
+.input { margin-left: 5px; }
+
+inputs:-webkit-input-placeholder {
+    color: #b5b5b5;
+}
+
+inputs-moz-placeholder {
+    color: #b5b5b5;
+}
+
+.inputs {
+    width: 270px;
+    padding: 5px 5px;
+    font-weight: 400;
+    color: #9D9E9E;
+    text-shadow: 1px 1px 0 rgba(256, 256, 256, 1.0);
+    background: transparent;
+    border: 1px solid #FFF;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+}
+
+.inputs:focus {
+    background: #DFE9EC;
+    color: #414848;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+    -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+    -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+    outline: 0;
+}
+
+.inputs:hover {
+    background: #DFE9EC;
+    color: #414848;
+}
+
+.css_button {
+    font-size: 16px;
+    font-family: Arial;
+    font-weight: normal;
+    text-decoration: inherit;
+    -webkit-border-radius: 19px 19px 19px 19px;
+    -moz-border-radius: 19px 19px 19px 19px;
+    border-radius: 19px 19px 19px 19px;
+    border: 1px solid #CBCBCB;
+    padding: 1px 12px;
+    text-shadow: 1px 1px 0px #ffffff;
+    -webkit-box-shadow: inset 1px 1px 0px 0px #ffffff;
+    -moz-box-shadow: inset 1px 1px 0px 0px #ffffff;
+    box-shadow: inset 1px 1px 0px 0px #ffffff;
+    cursor: pointer;
+    color: #666666;
+    display: inline-block;
+    background: -webkit-linear-gradient(90deg, #dfdfdf 5%, #ededed 100%);
+    background: -moz-linear-gradient(90deg, #dfdfdf 5%, #ededed 100%);
+    background: -ms-linear-gradient(90deg, #dfdfdf 5%, #ededed 100%);
+    background: linear-gradient(180deg, #ededed 5%, #dfdfdf 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ededed",endColorstr="#dfdfdf");
+}
+
+.css_button:hover {
+    background: -webkit-linear-gradient(90deg, #ededed 5%, #dfdfdf 100%);
+    background: -moz-linear-gradient(90deg, #ededed 5%, #dfdfdf 100%);
+    background: -ms-linear-gradient(90deg, #ededed 5%, #dfdfdf 100%);
+    background: linear-gradient(180deg, #dfdfdf 5%, #ededed 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#dfdfdf",endColorstr="#ededed");
+}
+
+
+.css_button:active {
+    position:relative;
+    top: 1px;
+}

@@ -135,7 +135,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
                 $("#messageLog").append("### - Failed to read messages from server - ###</br>"); 
             },
             complete: function () {
-                if (callBack !== undefined) { callBack(); }
+                if (callBack !== undefined || callBack != null) { callBack(); }
             }
         });
     };
@@ -238,7 +238,7 @@ $(document).ready(function() {
         }
     });
 
-    $("#refresh").click(function () {
+    var refresh = function () {
         chatClient.TotalMessageCount = 0;
         $("#messageLog").html("");
         $("#users").html("");
@@ -247,8 +247,11 @@ $(document).ready(function() {
             chatClient.ContinuePolling = true;
             callBack = ChatClient.poll;
         }
+        $("#console").append(callBack);
         chatClient.readMessages(callBack);
-    });
+    };
+    $("#refresh").click(refresh);
+    Mousetrap.bind('ctrl+r', refresh);
 
     $("#message").keypress(function (e) {
         if (e.keyCode == 13 && $.trim($("#message").val()).length) {

@@ -1,51 +1,12 @@
 <html>
-<head><title>Web Chat</title>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<title>Web Chat</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/static/main.css">
 </head>
 <body>
-<style>
-    ul { list-style-type: none; }
-    html { font-size: 100%; }
-    body { margin-left: 5px; font-family: Arial; font-size: 1em; 
-        height: 100%; 
-        overflow: hidden;
-        background-image: -webkit-gradient(
-            linear,
-            left top,
-            right bottom,
-            color-stop(0, #FAF7F9),
-            color-stop(1, #EEEBFB)
-        );
-        background-image: -o-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
-        background-image: -moz-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
-        background-image: -webkit-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
-        background-image: -ms-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
-        background-image: linear-gradient(to right bottom, #FAF7F9 0%, #EEEBFB 100%);
-
-    }
-    .metaData {
-        font-weight: bold;
-		font-size: 90%;
-    }
-	#message { width: 55%; }
-    .usersContainer { 
-        float: right; width: 15%; height: 80%;
-        margin-left: 5px;
-        margin-top: -22px;
-    }
-    #messageLog {
-        overflow-y: auto;
-        height: 80%;
-        display: block;
-        margin: 7px 2px 5px 5px;
-        padding: 5px 5px 5px 5px;
-        border: 1px solid black;
-    }
-    .posting { background-color: gray; }
-    .userStyle { background-color: #dcc5ed; }
-    .generalUserStyle { display: block; }
-</style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
 
 <div class="usersContainer">
@@ -56,13 +17,13 @@
 <div id="messageLog"></div>
 
 <div class="input"> 
-	<label for="userName">Name:</label>
-	<input type="text" id="userName" value=""></input>
-	<label for="message">Message:</label>
-	<input type="text" id="message" value="" />
-	<input type="button" id="newMessage" name="newMessage" value="Post"/>
-    <input type="button" id="refresh" name="refresh" value="Refresh" />
+	<input type="text" id="userName" value="" placeholder="Name" class="inputs mousetrap"></input>
+	<input type="text" id="message" value="" placeholder="Message" class="inputs mousetrap"/>
+	<input type="button" id="newMessage" name="newMessage" value="Post" class="css_button" />
+    <input type="button" id="refresh" name="refresh" value="Refresh" class="css_button" />
 </div>
+
+<div id="console"></div>
 
 <script id="message-template" type="text/x-handlebars-template">
   {{#each messages}}
@@ -82,6 +43,7 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script src="/static/js/handlebars-v2.0.0.js"></script>
 <script src="/static/js/jquery.hotkeys.js"></script>
+<script src="/static/js/mousetrap.min.js"></script>
 <script src="/static/js/chatClient.js"></script>
 </body>
 </html>
