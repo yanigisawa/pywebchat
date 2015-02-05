@@ -160,6 +160,22 @@ def historyForKey(key):
     response.set_header('Content-Type', 'application/json')
     return json.dumps(messageList, cls=MessageEncoder)
 
+@get('/test')
+def generateLoremIpsum():
+    with open('loremipsum.txt', 'r') as f:
+        lineCount = 0
+        for line in f:
+            lineCount += 1
+            msg = Message()
+            if lineCount %3 != 0:
+                msg.user = "test" 
+            else:
+                msg.user = "test2"
+            msg.message = line
+            msg.date = datetime.utcnow()
+            storeMessage(msg)
+    return "Test data generated"
+
 if __name__ == "__main__":
     run(server='paste', reloader=True, port=5000)
 

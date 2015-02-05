@@ -1,23 +1,33 @@
 <html>
 <head><title>Web Chat</title>
-<!-- Latest compiled and minified CSS -->
-<!--<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">-->
-
-<!-- Optional theme 
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css">
--->
-
-
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css">
 </head>
 <body>
 <style>
     ul { list-style-type: none; }
-    body { margin-left: 5px; font-family: Arial; }
+    html { font-size: 100%; }
+    body { margin-left: 5px; font-family: Arial; font-size: 1em; 
+        height: 100%; 
+        overflow: hidden;
+        background-image: -webkit-gradient(
+            linear,
+            left top,
+            right bottom,
+            color-stop(0, #FAF7F9),
+            color-stop(1, #EEEBFB)
+        );
+        background-image: -o-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+        background-image: -moz-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+        background-image: -webkit-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+        background-image: -ms-linear-gradient(right bottom, #FAF7F9 0%, #EEEBFB 100%);
+        background-image: linear-gradient(to right bottom, #FAF7F9 0%, #EEEBFB 100%);
+
+    }
     .metaData {
         font-weight: bold;
 		font-size: 90%;
     }
-    input { font-size: 100%; }
 	#message { width: 55%; }
     .usersContainer { 
         float: right; width: 15%; height: 80%;
@@ -28,12 +38,12 @@
         overflow-y: auto;
         height: 80%;
         display: block;
-        margin: 0 0 5px 5px;
-        padding: 0 0 5px 5px;
+        margin: 7px 2px 5px 5px;
+        padding: 5px 5px 5px 5px;
         border: 1px solid black;
     }
     .posting { background-color: gray; }
-    .userStyle { background-color: #DDDAFA; }
+    .userStyle { background-color: #dcc5ed; }
     .generalUserStyle { display: block; }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
