@@ -124,11 +124,6 @@ def getMessagesForHashKey(key):
     return filtered_msgs
     
 def getDayKeyList():
-    """Returns All Messages from the table
-    Remove this method after development is complete. 
-    There is no reason to return all records in the table.
-
-    """
     msg_table = getMessageTable()
     all_msgs = list(msg_table.scan())
     keys = []
@@ -136,6 +131,6 @@ def getDayKeyList():
         if m['date_string'] not in keys:
             keys.append(m['date_string'])
 
-    return keys
+    return sorted(keys)
 
 
