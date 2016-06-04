@@ -100,7 +100,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
 
         $.ajax({
             type: "PUT",
-            url: "/newmessage",
+            url: config.room + "/newmessage",
             dataType: "json",
             data: { 
                 name: _userNameField.val(), 
@@ -128,7 +128,7 @@ var ChatClient = function(messageLog, userNameField, messageField, userLog) {
 
         $.ajax({
             type: "POST",
-            url: "/readmessages",
+            url: config.room + "/readmessages",
             dataType: "json",
             success: success,
             error: function() { 
@@ -145,7 +145,7 @@ var chatClient = new ChatClient($("#messageLog"), $("#userName"), $("#message"),
 
 ChatClient.poll = function (){
     $.ajax({ 
-        url: "/poll", 
+        url: config.room + "/poll", 
         type: "POST",
         data: {
             poll: true,
@@ -188,7 +188,7 @@ ChatClient.SendActivity = function(isActive) {
 
     $.ajax({
         type: "PUT",
-        url: "/useractivity",
+        url: config.room + "/useractivity",
         dataType: "json",
         data: { 
             name: $("#userName").val(), 

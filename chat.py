@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import paste
-from bottle import run, template, static_file, request, post, get, put, hook, response, route
+from bottle import run, jinja2_template as template, static_file, request, post, get, put, hook, response, route
 
 import os, json
 from datetime import datetime, timedelta
@@ -18,7 +18,7 @@ _newMsg = Event()
 
 def storeMessage(msg):
     _messages.append(msg)
-    ua = UserActivity(name = msg.user, active = True, date = msg.date)
+    ua = UserActivity(name = msg.user, active = True, date = msg.date, room = msg.room)
     logUserActivity(ua)
     storeSingleMessage(_todaysKey, msg)
 
@@ -37,7 +37,7 @@ def logUserActivity(userActivity):
     _newMsg.set()
 
 def getModifiedUsersArray(users, u):
-    userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date)
+    userObjectToReturn = UserActivity(name = u.name, active = u.active, date = u.date, room = u.room)
 
     if u in users:
         for user in users:
@@ -68,7 +68,7 @@ def setUserActivityDate(userArray, userName, date):
 
     return userArray
 
-def getMessages():
+def getMessages(room = None):
     result = ApiResult()
     result.success = True
 
@@ -83,7 +83,12 @@ def getMessages():
         _messages = []
 
     users = removeInactiveUsers(_users)
-    chatResponse = ChatApiResponse(messages = _messages, users = _users)
+    room_users = []
+    if room != None:
+        _messages = [x for x in _messages if x.room == room]
+        room_users = [u for u in _users if u.room == room]
+
+    chatResponse = ChatApiResponse(messages = _messages, users = room_users)
     result.data = chatResponse
 
     jsonStr = json.dumps(result, cls=MessageEncoder)
@@ -98,13 +103,17 @@ def getJsonSuccessResponse():
 def index():
     return static_file("index.html", 'static')
 
+@get('/:room')
+def room(room):
+    return template("templates/room.tpl", { 'room' : room})
+
 @route('/static/:path#.+#', name='static')
 def static(path):
     response.set_header('Cache-Control', 'no-cache')
     return static_file(path, root='static')
 
-@put('/newmessage')
-def newMessage():
+@put('/:room/newmessage')
+def newMessage(room):
     messageSubmitted = request.POST.get("message", "").strip()
     name = request.POST.get("name", "").strip()
 
@@ -113,31 +122,32 @@ def newMessage():
         msg.user = name
         msg.message = messageSubmitted
         msg.date = datetime.utcnow()
+        msg.room = room
         storeMessage(msg)
 
     return getJsonSuccessResponse()
 
-@put('/useractivity')
-def userActivity():
+@put('/:room/useractivity')
+def userActivity(room):
     active = request.POST.get("active", "").strip()
     activity = request.POST.get("activity", "").strip()
     name = request.POST.get("name", "").strip()
     if activity and len(name) > 0:
-        u = UserActivity(name = name, active = active, date = datetime.utcnow())
+        u = UserActivity(name = name, active = active, date = datetime.utcnow(), room = room)
         logUserActivity(u)
 
     return getJsonSuccessResponse()
 
-@post('/poll')
-def poll():
+@post('/:room/poll')
+def poll(room):
     _newMsg.clear()
     _newMsg.wait(_secondsToWait)
 
-    return getMessages()
+    return getMessages(room)
 
-@post('/readmessages')
-def readMessages():
-    return getMessages()
+@post('/:room/readmessages')
+def readMessages(room):
+    return getMessages(room)
 
 @get('/clear')
 def clear():
@@ -169,8 +179,10 @@ def generateLoremIpsum():
             msg = Message()
             if lineCount %3 != 0:
                 msg.user = "test" 
+                msg.room = "test1"
             else:
                 msg.user = "test2"
+                msg.room = "test2"
             msg.message = line
             msg.date = datetime.utcnow()
             storeMessage(msg)

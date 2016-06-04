@@ -3,11 +3,13 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 class Message(object):
-    def __init__(self, user = None, message = None, date = datetime.utcnow(), filterHTML = True):
+    def __init__(self, user = None, message = None, date = datetime.utcnow(), filterHTML = True,
+            room = None):
         self.filterHTML = filterHTML
         self.user = user
         self.message = message
         self.date = date
+        self.room = room
 
     @staticmethod
     def replaceUrlsWithLinks(msg):
@@ -48,15 +50,16 @@ class Message(object):
             self.m_date = None
 
     def __repr__(self):
-        return "Date: {0} - User: {1} - Message: {2}".format(self.date, self.user, self.message)
+        return "Date: {0} - User: {1} - Message: {2} - Room: {3}".format(self.date, self.user, self.message, self.room)
 
     def __cmp__(self, other):
         if hasattr(other, 'date'):
             return cmp(self.date, other.date)
 
 class UserActivity(object):
-    def __init__(self, name = None, active = False, date = None):
+    def __init__(self, name = None, active = False, date = None, room = None):
         self.name = name
+        self.room = room
 
         if isinstance(active, str):
             self.active = (active == "true")
@@ -82,7 +85,7 @@ class UserActivity(object):
         return self.name == other.name
 
     def __repr__(self):
-        return "{0} - {1} - {2}".format(self.name, self.active, self.date)
+        return "{0} - {1} - {2} - {3}".format(self.name, self.active, self.date, self.room)
 
 class ChatApiResponse(object):
     def __init__(self, messages = [], users = []):

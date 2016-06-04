@@ -77,6 +77,7 @@ def getDynamoDBMessage(message):
     dyn_msg['date'] = message.date.isoformat()
     dyn_msg['message'] = message.message
     dyn_msg['user'] = message.user
+    dyn_msg['room'] = message.room
 
     return dyn_msg
 
@@ -87,10 +88,12 @@ def getMessageFromDynObject(dyn_dict):
     :returns: Message python object
 
     """
-    return Message(user = dyn_dict['user']
+    return Message(
+            user = dyn_dict['user']
             , date = dateutil.parser.parse(dyn_dict['date'])
             , message = dyn_dict['message']
-            , filterHTML = False)
+            , filterHTML = False
+            , room = dyn_dict['room'])
 
 def storeSingleMessage(date_string, message):
     msg_table = getMessageTable()
