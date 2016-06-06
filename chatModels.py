@@ -107,6 +107,7 @@ class MessageEncoder(json.JSONEncoder):
             x = {}
             x["filterHTML"], x["user"], x["message"] = obj.filterHTML, obj.user, obj.message
             x["date"] = obj.date
+            x["room"] = obj.room
             return x
 
         if isinstance(obj, ApiResult):
