@@ -31,6 +31,7 @@ def logUserActivity(userActivity):
             if userActivity == user:
                 user.active = userActivity.active
                 user.date = userActivity.date
+                user.room = userActivity.room
                 break
     else:
         _users.append(userActivity)
@@ -85,10 +86,10 @@ def getMessages(room = None):
     users = removeInactiveUsers(_users)
     room_users = []
     if room != None:
-        _messages = [x for x in _messages if x.room == room]
+        room_messages = [x for x in _messages if x.room == room]
         room_users = [u for u in _users if u.room == room]
 
-    chatResponse = ChatApiResponse(messages = _messages, users = room_users)
+    chatResponse = ChatApiResponse(messages = room_messages, users = room_users)
     result.data = chatResponse
 
     jsonStr = json.dumps(result, cls=MessageEncoder)

@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-<title>Web Chat</title>
+<title>{{ room }} - Web Chat</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="/static/main.css">

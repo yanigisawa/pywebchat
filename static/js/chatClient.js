@@ -261,7 +261,7 @@ $(document).ready(function() {
 
     $("#message").focus(function() { 
         clearInterval(chatClient.TitleToggleInterval); 
-        document.title = "Web Chat";
+        document.title = config.room + " - Web Chat";
     } );
 
     chatClient.readMessages(ChatClient.poll);

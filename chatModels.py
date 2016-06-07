@@ -82,7 +82,7 @@ class UserActivity(object):
             self.m_date = None
 
     def __eq__(self, other):
-        return self.name == other.name
+        return self.name == other.name and self.room == other.room
 
     def __repr__(self):
         return "{0} - {1} - {2} - {3}".format(self.name, self.active, self.date, self.room)
@@ -116,6 +116,7 @@ class MessageEncoder(json.JSONEncoder):
         if isinstance(obj, UserActivity):
             x = {}
             x["name"], x["date"], x["active"] = obj.name, obj.date, obj.active
+            x["room"] = obj.room
             return x
 
         if isinstance(obj, ChatApiResponse):
