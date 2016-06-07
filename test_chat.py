@@ -109,7 +109,7 @@ class ChatUnitTests(unittest.TestCase):
         u = chat.UserActivity(name = "TestUser", active = False, date = today + threeMinuteAgoDelta, room = self._roomName)
         chat.logUserActivity(u)
 
-        m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "test message")
+        m = chat.Message(user = "TestUser", date = datetime.utcnow(), message = "test message", room = self._roomName)
         chat.storeMessage(m)
 
         msg, users = getMessagesAndUsersFromJson(chat.getMessages(self._roomName))
