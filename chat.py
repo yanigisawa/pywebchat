@@ -159,11 +159,7 @@ def clear():
 @get('/history')
 def history():
     keyList = getDayKeyList()
-    listStr = ""
-    for k in keyList:
-        listStr += "<a href='/history/{0}'>{0}</a><br/>".format(k)
-
-    return listStr
+    return template("templates/history.tpl", { 'keyList' : keyList})
 
 @get('/history/:key')
 def historyForKey(key):

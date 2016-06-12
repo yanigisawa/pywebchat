@@ -134,6 +134,6 @@ def getDayKeyList():
         if m['date_string'] not in keys:
             keys.append(m['date_string'])
 
-    return sorted(keys)
+    return reversed(sorted(keys))
 
 
