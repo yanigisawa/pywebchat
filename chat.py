@@ -77,12 +77,11 @@ def getMessages(room = None):
 
     global _todaysKey
     global _messages
-    if len(_messages) == 0:
-        _messages = getMessagesForHashKey(_todaysKey)
-    elif _todaysKey != today:
+    if _todaysKey != today:
         _todaysKey = today
         _messages = []
 
+    _messages = getMessagesForHashKey(_todaysKey)
     users = removeInactiveUsers(_users)
     room_users = []
     if room != None:
