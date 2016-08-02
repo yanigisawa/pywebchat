@@ -17,6 +17,7 @@ _users, _messages = [], []
 _newMsg = Event()
 
 def storeMessage(msg):
+    checkTodaysKey()
     _messages.append(msg)
     ua = UserActivity(name = msg.user, active = True, date = msg.date, room = msg.room)
     logUserActivity(ua)
@@ -69,19 +70,21 @@ def setUserActivityDate(userArray, userName, date):
 
     return userArray
 
-def getMessages(room = None):
-    result = ApiResult()
-    result.success = True
-
+def checkTodaysKey():
     today = datetime.utcnow().strftime("%Y_%m_%d")
-
     global _todaysKey
     global _messages
     if _todaysKey != today:
         _todaysKey = today
         _messages = []
+        _messages = getMessagesForHashKey(_todaysKey)
 
-    _messages = getMessagesForHashKey(_todaysKey)
+def getMessages(room = None):
+    result = ApiResult()
+    result.success = True
+
+    checkTodaysKey()
+
     users = removeInactiveUsers(_users)
     room_users = []
     if room != None:

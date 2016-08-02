@@ -150,6 +150,7 @@ class ChatUnitTests(unittest.TestCase):
         yesterday = today + twentyFourHours
         chat._todaysKey = yesterday.strftime("%Y_%m_%d")
         chat.storeMessage(m)
+        chat._todaysKey = yesterday.strftime("%Y_%m_%d")
         msg, users = getMessagesAndUsersFromJson(chat.getMessages(self._roomName))
         self.assertEqual(0, len(msg))
         self.assertEqual(today.strftime("%Y_%m_%d"), chat._todaysKey)
@@ -157,6 +158,20 @@ class ChatUnitTests(unittest.TestCase):
     def test_GetMessageArrayFromJson_ParsesDateObjects(self):
         arr = chat.getMessageArrayFromJson(self.test_json)
         self.assertEqual(arr[0].date.strftime("%Y_%m_%d"), "2014_08_28") 
+
+    def test_WhenPreviousDayWasMostRecentlyUse_GetMessagesUpdatesToTodayAndReturnsNewMessages(self):
+        oneDayAgo = timedelta(days = -1)
+        m = chat.Message(user = "test user", date = datetime.utcnow() + oneDayAgo, message = "test", room = self._roomName)
+        chat._todaysKey = (datetime.utcnow() + oneDayAgo).strftime("%Y_%m_%d")
+        chat.storeMessage(m)
+        chat._todaysKey = (datetime.utcnow() + oneDayAgo).strftime("%Y_%m_%d")
+        
+        m = chat.Message(user = "test user", date = datetime.utcnow(), message = "test 1", room = self._roomName)
+        chat.storeMessage(m)
+        msg, _ = getMessagesAndUsersFromJson(chat.getMessages(self._roomName))
+        self.assertEqual(1, len(msg))
+
+        
 
         
 def main():
