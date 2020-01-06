@@ -30,7 +30,7 @@ pyzmq==14.4.1
 six==1.5.2
 sniffer==0.3.2
 tornado==4.0.2
-waitress==1.4.1
+waitress==1.4.2
 watchdog==0.6.0
 wmctrl==0.1
 wsgiref==0.1.2
